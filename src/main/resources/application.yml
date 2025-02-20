@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: Venue Management App
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jbpmDB
+    username: postgres
+    password: 1999
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hikari:
+        maximum-pool-size: 5
+        connection-timeout: 5000
+
+server:
+    port: 8081
