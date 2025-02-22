@@ -23,14 +23,14 @@ import java.util.Date;
 public abstract class Auditable<U> {
 
     @CreatedBy
-    protected U createdBy;
+    protected U createdBy= (U) "customer";
 
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
     protected Date creationDate;
 
     @LastModifiedBy
-    protected U lastModifiedBy;
+    protected U lastModifiedBy = (U) "customer";
 
     @LastModifiedDate
     @Temporal(TemporalType.TIMESTAMP)

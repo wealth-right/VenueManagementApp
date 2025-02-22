@@ -2,9 +2,9 @@ spring:
   application:
     name: Venue Management App
   datasource:
-    url: jdbc:postgresql://localhost:5432/jbpmDB
+    url: jdbc:postgresql://34.100.165.71:5432/lead_marketing_app
     username: postgres
-    password: 1999
+    password: UATPass@1234
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -20,3 +20,20 @@ spring:
 
 server:
     port: 8081
+    servlet:
+        context-path: /api
+
+
+jwt:
+    secret: ${JWT_SECRET:your-256-bit-secret-key-here-minimum-32-characters}
+    header: Authorization
+
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+    com:
+      venue:
+        mgmt: DEBUG
+

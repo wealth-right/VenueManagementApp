@@ -1,11 +1,12 @@
 package com.venue.mgmt.controller;
 
-import com.venue.mgmt.dto.LeadSearchCriteria;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.services.LeadRegistrationService;
+import com.venue.mgmt.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
@@ -15,13 +16,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/venue-app/v1/leads")
-@Tag(name = "Lead Registration Controller", description = "API to fetch details of Leads")
+@Tag(name = "Lead Registration Controller", description = "API to manage lead registrations")
+@SecurityRequirement(name = "bearerAuth")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @Slf4j
 public class LeadRegistrationController {
 
@@ -30,74 +31,129 @@ public class LeadRegistrationController {
     @Autowired
     private LeadRegistrationService leadRegistrationService;
 
+    @Autowired
+    private HttpServletRequest request;
+
     @PostMapping
-    public ResponseEntity<LeadRegistration> createLead(@RequestBody @Valid LeadRegistration leadRegistration) {
+    @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details")
+    public ResponseEntity<LeadRegistration> createLead(
+            @RequestHeader(name = "Authorization") String authHeader,
+            @Valid @RequestBody LeadRegistration leadRegistration) {
+
         logger.info("VenueManagementApp - Inside create Lead Method");
-        leadRegistration.setActive(true);
-        LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
-        if(savedLead!=null){
-            return ResponseEntity.ok(savedLead);
+        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+        if (isTokenExpired) {
+            logger.warn("Token is expired");
+            return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.badRequest().build();
+        String userId = JwtUtil.extractUserIdFromToken(authHeader);
+        request.setAttribute("userId", userId);
+
+        leadRegistration.setActive(true);
+        leadRegistration.setCreatedBy(userId);
+        LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
+        return ResponseEntity.ok(savedLead);
     }
 
     @GetMapping
-    public ResponseEntity<Iterable<LeadRegistration>> getAllLeads(
-            @RequestParam(required = false, defaultValue = "desc") String sort) {
-        logger.info("VenueManagementApp - Inside get All Leads Method with sort: {}", sort);
-        Iterable<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDate(sort);
-        if(leads!=null && leads.iterator().hasNext()){
-            return ResponseEntity.ok(leads);
+    @Operation(summary = "Get all leads", description = "Retrieves all leads with pagination support")
+    public ResponseEntity<Page<LeadRegistration>> getAllLeads(
+            @RequestHeader(name = "Authorization") String authHeader,
+            @RequestParam(defaultValue = "desc") String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) throws Exception {
+
+        logger.info("VenueManagementApp - Inside get All Leads Method with sort: {}, page: {}, size: {}", sort, page, size);
+
+        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+        if (isTokenExpired) {
+            return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.badRequest().build();
+
+        Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDate(sort, page, size);
+        return ResponseEntity.ok(leads);
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search leads with filters, sorting and pagination")
-    public ResponseEntity<Page<LeadRegistration>> searchLeads(
-            @Parameter(description = "Filter by full name (case-insensitive, partial match)")
-            @RequestParam(required = false) String fullName,
-            
-            @Parameter(description = "Filter by email (case-insensitive, partial match)")
-            @RequestParam(required = false) String email,
-            
-            @Parameter(description = "Filter by mobile number (partial match)")
-            @RequestParam(required = false) String mobile,
-            
-            @Parameter(description = "Field to sort by (fullName, email, mobileNumber, createdDate)")
-            @RequestParam(defaultValue = "fullName") String sortBy,
-            
-            @Parameter(description = "Sort direction (asc or desc)")
-            @RequestParam(defaultValue = "asc") String sortDirection,
-            
-            @Parameter(description = "Page number (0-based)")
-            @RequestParam(defaultValue = "0") int page,
-            
-            @Parameter(description = "Number of records per page")
-            @RequestParam(defaultValue = "10") int size) {
-        
-        logger.info("VenueManagementApp - Inside search Leads Method with fullName: {}, email: {}, mobile: {}", 
-            fullName, email, mobile);
-        
-        LeadSearchCriteria criteria = new LeadSearchCriteria();
-        criteria.setFullName(fullName);
-        criteria.setEmail(email);
-        criteria.setMobile(mobile);
-        criteria.setSortBy(sortBy);
-        criteria.setSortDirection(sortDirection);
-        criteria.setPage(page);
-        criteria.setSize(size);
+    public ResponseEntity<List<LeadRegistration>> searchLeads(
+            @RequestHeader(name = "Authorization", required = true) String authHeader,
+            @RequestParam(required = false) String query) {
 
-        logger.info("Search criteria: {}", criteria);
-
-        Page<LeadRegistration> leads = leadRegistrationService.searchLeads(criteria);
-        
-        if (leads != null && leads.hasContent()) {
-            logger.info("Found {} leads matching the criteria", leads.getTotalElements());
-            return ResponseEntity.ok(leads);
+        logger.info("VenueManagementApp - Inside search Leads Method with query: {}", query);
+        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+        if (isTokenExpired) {
+            return ResponseEntity.status(401).build();
         }
-        logger.info("No leads found matching the criteria");
-        return ResponseEntity.ok(Page.empty());
+
+        List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query);
+        return ResponseEntity.ok(leads);
     }
 
+//    @PutMapping("/{leadId}")
+//    @Operation(summary = "Update a lead", description = "Updates an existing lead with the provided details")
+//    public ResponseEntity<LeadRegistration> updateLead(
+//            @RequestHeader(name = "Authorization") String authHeader,
+//            @PathVariable Long leadId,
+//            @Valid @RequestBody LeadRegistration leadRegistration) {
+//
+//        logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
+//
+//        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+//        if (isTokenExpired) {
+//            return ResponseEntity.status(401).build();
+//        }
+//
+//        try {
+//            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration);
+//            return ResponseEntity.ok(updatedLead);
+//        } catch (RuntimeException e) {
+//            logger.error("Error updating lead: {}", e.getMessage());
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
+
+//    @PatchMapping("/{leadId}")
+//    @Operation(summary = "Partially update a lead", description = "Updates specific fields of an existing lead")
+//    public ResponseEntity<LeadRegistration> patchLead(
+//            @RequestHeader(name = "Authorization") String authHeader,
+//            @PathVariable Long leadId,
+//            @Valid @RequestBody LeadPatchDTO leadPatchDTO) {
+//
+//        logger.info("VenueManagementApp - Inside patch Lead Method for leadId: {}", leadId);
+//
+//        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+//        if (isTokenExpired) {
+//            return ResponseEntity.status(401).build();
+//        }
+//
+//        try {
+//            LeadRegistration patchedLead = leadRegistrationService.patchLead(leadId, leadPatchDTO);
+//            return ResponseEntity.ok(patchedLead);
+//        } catch (RuntimeException e) {
+//            logger.error("Error patching lead: {}", e.getMessage());
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
+
+//    @DeleteMapping("/{leadId}")
+//    @Operation(summary = "Delete a lead", description = "Deletes an existing lead by its ID")
+//    public ResponseEntity<Void> deleteLead(
+//            @RequestHeader(name = "Authorization") String authHeader,
+//            @PathVariable Long leadId) {
+//
+//        logger.info("VenueManagementApp - Inside delete Lead Method for leadId: {}", leadId);
+//
+//        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+//        if (isTokenExpired) {
+//            return ResponseEntity.status(401).build();
+//        }
+//
+//        try {
+//            leadRegistrationService.deleteLead(leadId);
+//            return ResponseEntity.noContent().build();
+//        } catch (RuntimeException e) {
+//            logger.error("Error deleting lead: {}", e.getMessage());
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
 }

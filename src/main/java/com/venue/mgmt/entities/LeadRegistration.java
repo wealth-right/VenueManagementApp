@@ -1,12 +1,15 @@
 package com.venue.mgmt.entities;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.venue.mgmt.enums.ProductType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
@@ -66,8 +69,12 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "email")
     String email;
 
-    @Column(name = "campaign_id")
-    String campaignId;
+    @Column(name = "campaign")
+    private String campaign;
+
+    @OneToOne(mappedBy = "leadRegistration", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private Campaign campaignEntity;
 
     @Column(name = "line_of_business")
     String lineOfBusiness;
@@ -86,6 +93,8 @@ public class LeadRegistration extends Auditable<String> {
 
     @Column(name = "is_deleted")
     Boolean isDeleted = false;
+
+    private static final Logger logger = LogManager.getLogger(LeadRegistration.class);
 
     public Long getLeadId() {
         return leadId;
@@ -183,12 +192,20 @@ public class LeadRegistration extends Auditable<String> {
         this.email = email;
     }
 
-    public String getCampaignId() {
-        return campaignId;
+    public String getCampaign() {
+        return campaign;
     }
 
-    public void setCampaignId(String campaignId) {
-        this.campaignId = campaignId;
+    public void setCampaign(String campaign) {
+        this.campaign = campaign;
+    }
+
+    public Campaign getCampaignEntity() {
+        return campaignEntity;
+    }
+
+    public void setCampaignEntity(Campaign campaignEntity) {
+        this.campaignEntity = campaignEntity;
     }
 
     public String getLineOfBusiness() {
@@ -237,6 +254,23 @@ public class LeadRegistration extends Auditable<String> {
 
     public void setDeleted(Boolean deleted) {
         isDeleted = deleted;
+    }
+
+    // Helper method to add a campaign
+    public void addCampaign(Campaign campaign) {
+        this.campaignEntity = campaign;
+        campaign.setLeadRegistration(this);
+    }
+
+    // Helper method to remove a campaign
+    public void removeCampaign() {
+        if (this.campaignEntity != null) {
+            logger.info("Removing campaign '{}' from lead ID: {}", this.campaignEntity.getCampaignName(), this.getLeadId());
+            Campaign campaign = this.campaignEntity;
+            this.campaignEntity = null;
+            campaign.setLeadRegistration(null);
+            logger.info("Campaign removed successfully");
+        }
     }
 
     @AssertTrue(message = "Either mobile number or email must be provided")
