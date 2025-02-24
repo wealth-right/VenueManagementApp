@@ -15,5 +15,4 @@ public interface LeadRegistrationService {
     List<LeadRegistration> simpleSearchLeads(String searchTerm);
     LeadRegistration updateLead(Long leadId, LeadRegistration leadRegistration);
     void deleteLead(Long leadId);
-    LeadRegistration patchLead(Long leadId, LeadPatchDTO leadPatchDTO);
 }

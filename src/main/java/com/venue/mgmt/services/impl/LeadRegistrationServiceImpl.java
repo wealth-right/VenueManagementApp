@@ -106,19 +106,32 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             existingLead.setEmail(updatedLead.getEmail());
             existingLead.setMobileNumber(updatedLead.getMobileNumber());
             existingLead.setStatus(updatedLead.getStatus());
+            existingLead.setFullName(updatedLead.getFullName());
+            existingLead.setActive(true);
+            existingLead.setLastModifiedBy(updatedLead.getLastModifiedBy());
+            existingLead.setLastModifiedDate(updatedLead.getLastModifiedDate());
+            existingLead.setMaritalStatus(updatedLead.getMaritalStatus());
+            existingLead.setAge(updatedLead.getAge());
+            existingLead.setFullName(updatedLead.getFullName());
+            existingLead.setOccupation(updatedLead.getOccupation());
+            existingLead.setIncome(updatedLead.getIncome());
+            existingLead.setDob(updatedLead.getDob());
+            existingLead.setGender(updatedLead.getGender());
+            existingLead.setAddress(updatedLead.getAddress());
+            existingLead.setLineOfBusiness(updatedLead.getLineOfBusiness());
+            existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
             // Handle campaign update if provided
             String campaignValue = updatedLead.getCampaign();
             if (campaignValue != null && !campaignValue.trim().isEmpty()) {
-                // Remove existing campaign if any
-                if (existingLead.getCampaignEntity() != null) {
-                    existingLead.removeCampaign();
+                Campaign campaign = existingLead.getCampaignEntity();
+                if (campaign == null) {
+                    campaign = new Campaign();
+                    campaign.setCampaignName(campaignValue);
+                    existingLead.addCampaign(campaign);
+                } else {
+                    campaign.setCampaignName(campaignValue);
                 }
-                
-                // Add new campaign
-                Campaign newCampaign = new Campaign();
-                newCampaign.setCampaignName(campaignValue);
-                existingLead.addCampaign(newCampaign);
             }
 
             LeadRegistration savedLead = leadRegRepository.save(existingLead);
@@ -150,49 +163,4 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         }
     }
 
-    @Override
-    @Transactional
-    public LeadRegistration patchLead(Long leadId, LeadPatchDTO leadPatchDTO) {
-        try {
-            LeadRegistration existingLead = leadRegRepository.findById(leadId)
-                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-
-            // Update only the fields that are present in the patch request
-            if (leadPatchDTO.hasField("name")) {
-                existingLead.setFullName(leadPatchDTO.getName());
-            }
-            if (leadPatchDTO.hasField("email")) {
-                existingLead.setEmail(leadPatchDTO.getEmail());
-            }
-            if (leadPatchDTO.hasField("mobileNumber")) {
-                existingLead.setMobileNumber(leadPatchDTO.getMobileNumber());
-            }
-            if (leadPatchDTO.hasField("status")) {
-                existingLead.setStatus(leadPatchDTO.getStatus());
-            }
-
-            // Handle campaign update if provided
-            if (leadPatchDTO.hasField("campaign")) {
-                String campaignValue = leadPatchDTO.getCampaign();
-                if (campaignValue != null && !campaignValue.trim().isEmpty()) {
-                    // Remove existing campaign if any
-                    if (existingLead.getCampaignEntity() != null) {
-                        existingLead.removeCampaign();
-                    }
-                    
-                    // Add new campaign
-                    Campaign newCampaign = new Campaign();
-                    newCampaign.setCampaignName(campaignValue);
-                    existingLead.addCampaign(newCampaign);
-                }
-            }
-
-            LeadRegistration savedLead = leadRegRepository.save(existingLead);
-            logger.info("Patched lead with ID: {}", savedLead.getLeadId());
-            return savedLead;
-        } catch (Exception e) {
-            logger.error("Error while patching lead: {}", e.getMessage(), e);
-            throw e;
-        }
-    }
 }

@@ -89,71 +89,49 @@ public class LeadRegistrationController {
         return ResponseEntity.ok(leads);
     }
 
-//    @PutMapping("/{leadId}")
-//    @Operation(summary = "Update a lead", description = "Updates an existing lead with the provided details")
-//    public ResponseEntity<LeadRegistration> updateLead(
-//            @RequestHeader(name = "Authorization") String authHeader,
-//            @PathVariable Long leadId,
-//            @Valid @RequestBody LeadRegistration leadRegistration) {
-//
-//        logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
-//
-//        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-//        if (isTokenExpired) {
-//            return ResponseEntity.status(401).build();
-//        }
-//
-//        try {
-//            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration);
-//            return ResponseEntity.ok(updatedLead);
-//        } catch (RuntimeException e) {
-//            logger.error("Error updating lead: {}", e.getMessage());
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
+    @PutMapping("/{leadId}")
+    @Operation(summary = "Update a lead", description = "Updates an existing lead with the provided details")
+    public ResponseEntity<LeadRegistration> updateLead(
+            @RequestHeader(name = "Authorization") String authHeader,
+            @PathVariable Long leadId,
+            @Valid @RequestBody LeadRegistration leadRegistration) {
 
-//    @PatchMapping("/{leadId}")
-//    @Operation(summary = "Partially update a lead", description = "Updates specific fields of an existing lead")
-//    public ResponseEntity<LeadRegistration> patchLead(
-//            @RequestHeader(name = "Authorization") String authHeader,
-//            @PathVariable Long leadId,
-//            @Valid @RequestBody LeadPatchDTO leadPatchDTO) {
-//
-//        logger.info("VenueManagementApp - Inside patch Lead Method for leadId: {}", leadId);
-//
-//        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-//        if (isTokenExpired) {
-//            return ResponseEntity.status(401).build();
-//        }
-//
-//        try {
-//            LeadRegistration patchedLead = leadRegistrationService.patchLead(leadId, leadPatchDTO);
-//            return ResponseEntity.ok(patchedLead);
-//        } catch (RuntimeException e) {
-//            logger.error("Error patching lead: {}", e.getMessage());
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
+        logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
 
-//    @DeleteMapping("/{leadId}")
-//    @Operation(summary = "Delete a lead", description = "Deletes an existing lead by its ID")
-//    public ResponseEntity<Void> deleteLead(
-//            @RequestHeader(name = "Authorization") String authHeader,
-//            @PathVariable Long leadId) {
-//
-//        logger.info("VenueManagementApp - Inside delete Lead Method for leadId: {}", leadId);
-//
-//        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-//        if (isTokenExpired) {
-//            return ResponseEntity.status(401).build();
-//        }
-//
-//        try {
-//            leadRegistrationService.deleteLead(leadId);
-//            return ResponseEntity.noContent().build();
-//        } catch (RuntimeException e) {
-//            logger.error("Error deleting lead: {}", e.getMessage());
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
+        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+        if (isTokenExpired) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration);
+            return ResponseEntity.ok(updatedLead);
+        } catch (RuntimeException e) {
+            logger.error("Error updating lead: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    @DeleteMapping("/{leadId}")
+    @Operation(summary = "Delete a lead", description = "Deletes an existing lead by its ID")
+    public ResponseEntity<Void> deleteLead(
+            @RequestHeader(name = "Authorization") String authHeader,
+            @PathVariable Long leadId) {
+
+        logger.info("VenueManagementApp - Inside delete Lead Method for leadId: {}", leadId);
+
+        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+        if (isTokenExpired) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            leadRegistrationService.deleteLead(leadId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            logger.error("Error deleting lead: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
