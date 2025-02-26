@@ -1,7 +1,6 @@
 package com.venue.mgmt.entities;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.venue.mgmt.enums.ProductType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
@@ -69,12 +68,12 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "email")
     String email;
 
-    @Column(name = "campaign")
-    private String campaign;
+    @Column(name = "campaign_id")
+    private String campaignId;
 
-    @OneToOne(mappedBy = "leadRegistration", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonManagedReference
-    private Campaign campaignEntity;
+//    @OneToOne(mappedBy = "leadRegistration", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    @JsonManagedReference
+//    private Campaign campaignEntity;
 
     @Column(name = "line_of_business")
     String lineOfBusiness;
@@ -192,21 +191,21 @@ public class LeadRegistration extends Auditable<String> {
         this.email = email;
     }
 
-    public String getCampaign() {
-        return campaign;
+    public String getCampaignId() {
+        return campaignId;
     }
 
-    public void setCampaign(String campaign) {
-        this.campaign = campaign;
+    public void setCampaignId(String campaignId) {
+        this.campaignId = campaignId;
     }
 
-    public Campaign getCampaignEntity() {
-        return campaignEntity;
-    }
-
-    public void setCampaignEntity(Campaign campaignEntity) {
-        this.campaignEntity = campaignEntity;
-    }
+//    public Campaign getCampaignEntity() {
+//        return campaignEntity;
+//    }
+//
+//    public void setCampaignEntity(Campaign campaignEntity) {
+//        this.campaignEntity = campaignEntity;
+//    }
 
     public String getLineOfBusiness() {
         return lineOfBusiness;
@@ -257,21 +256,21 @@ public class LeadRegistration extends Auditable<String> {
     }
 
     // Helper method to add a campaign
-    public void addCampaign(Campaign campaign) {
-        this.campaignEntity = campaign;
-        campaign.setLeadRegistration(this);
-    }
-
-    // Helper method to remove a campaign
-    public void removeCampaign() {
-        if (this.campaignEntity != null) {
-            logger.info("Removing campaign '{}' from lead ID: {}", this.campaignEntity.getCampaignName(), this.getLeadId());
-            Campaign campaign = this.campaignEntity;
-            this.campaignEntity = null;
-            campaign.setLeadRegistration(null);
-            logger.info("Campaign removed successfully");
-        }
-    }
+//    public void addCampaign(Campaign campaign) {
+//        this.campaignEntity = campaign;
+//        campaign.setLeadRegistration(this);
+//    }
+//
+//    // Helper method to remove a campaign
+//    public void removeCampaign() {
+//        if (this.campaignEntity != null) {
+//            logger.info("Removing campaign '{}' from lead ID: {}", this.campaignEntity.getCampaignName(), this.getLeadId());
+//            Campaign campaign = this.campaignEntity;
+//            this.campaignEntity = null;
+//            campaign.setLeadRegistration(null);
+//            logger.info("Campaign removed successfully");
+//        }
+//    }
 
     @AssertTrue(message = "Either mobile number or email must be provided")
     public boolean isEitherMobileOrEmailPresent() {

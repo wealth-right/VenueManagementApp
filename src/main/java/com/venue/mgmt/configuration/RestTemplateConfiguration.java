@@ -25,9 +25,7 @@ public class RestTemplateConfiguration {
             public void addCorsMappings(CorsRegistry registry){
                 registry.addMapping("/**")
                         .allowedOriginPatterns("*")
-                        .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
-                        .allowedHeaders("*")
-                        .maxAge(3600);
+                        .allowedMethods("GET","POST","PUT","DELETE","PATCH","OPTIONS");
             }
         };
     }

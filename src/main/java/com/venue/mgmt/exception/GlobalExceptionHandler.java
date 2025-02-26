@@ -1,6 +1,5 @@
 package com.venue.mgmt.exception;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.venue.mgmt.response.ErrorResponse;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;

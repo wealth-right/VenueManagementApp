@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(value = "/venue-app/v1/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Login Controller", description = "API for Customer to login")
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 public class LoginController {
     private static final Logger logger = LogManager.getLogger(LoginController.class);
     

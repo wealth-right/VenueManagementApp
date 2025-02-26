@@ -1,13 +1,9 @@
 package com.venue.mgmt.services.impl;
 
-import com.venue.mgmt.dto.LeadPatchDTO;
-import com.venue.mgmt.entities.Campaign;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.repositories.CampaignRepository;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.services.LeadRegistrationService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,27 +29,27 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     @Autowired
     private CampaignRepository campaignRepository;
 
-    @PersistenceContext
-    private EntityManager entityManager;
+//    @PersistenceContext
+//    private EntityManager entityManager;
 
     @Override
     @Transactional
     public LeadRegistration saveLead(LeadRegistration leadRegistration) {
         try {
-            logger.info("Starting to save lead with campaign value: {}", leadRegistration.getCampaign());
+            logger.info("Starting to save lead with campaign value: {}", leadRegistration.getCampaignId());
             
             // Handle campaign creation from the request
-            String campaignValue = leadRegistration.getCampaign();
-            if (campaignValue != null && !campaignValue.trim().isEmpty()) {
-                Campaign campaign = new Campaign();
-                campaign.setCampaignName(campaignValue);
-                
-                // Save the campaign first
-                campaign = campaignRepository.save(campaign);
-
-                // Now add it to the lead
-                leadRegistration.addCampaign(campaign);
-            }
+            String campaignValue = leadRegistration.getCampaignId();
+//            if (campaignValue != null && !campaignValue.trim().isEmpty()) {
+//                Campaign campaign = new Campaign();
+//                campaign.setCampaignName(campaignValue);
+//
+//                // Save the campaign first
+//                campaign = campaignRepository.save(campaign);
+//
+//                // Now add it to the lead
+//                leadRegistration.addCampaign(campaign);
+//            }
 
             // Save the lead registration
             logger.info("Saving lead registration...");
@@ -68,13 +64,13 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<LeadRegistration> getAllLeadsSortedByCreationDate(String sortDirection, int page, int size) {
+    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedBy(String sortDirection, int page, int size, String userId) {
         try {
             Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? 
                 Sort.Direction.DESC : Sort.Direction.ASC;
             Sort sort = Sort.by(direction, "creationDate");
             Pageable pageable = PageRequest.of(page, size, sort);
-            return leadRegRepository.findAll(pageable);
+            return leadRegRepository.findAllByUserId(userId,pageable);
         } catch (Exception e) {
             logger.error("Error while fetching all leads: {}", e.getMessage(), e);
             throw e;
@@ -83,12 +79,13 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LeadRegistration> simpleSearchLeads(String searchTerm) {
+    public List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId) {
+
         try {
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
-                return getAllLeadsSortedByCreationDate("desc", 0, Integer.MAX_VALUE).getContent();
+                return getAllLeadsSortedByCreationDateAndCreatedBy("desc", 0, Integer.MAX_VALUE,userId).getContent();
             }
-            return leadRegRepository.searchLeads(searchTerm);
+            return leadRegRepository.searchLeads(searchTerm,userId);
         } catch (Exception e) {
             logger.error("Error while searching leads: {}", e.getMessage(), e);
             throw e;
@@ -122,17 +119,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
             // Handle campaign update if provided
-            String campaignValue = updatedLead.getCampaign();
-            if (campaignValue != null && !campaignValue.trim().isEmpty()) {
-                Campaign campaign = existingLead.getCampaignEntity();
-                if (campaign == null) {
-                    campaign = new Campaign();
-                    campaign.setCampaignName(campaignValue);
-                    existingLead.addCampaign(campaign);
-                } else {
-                    campaign.setCampaignName(campaignValue);
-                }
-            }
+//            String campaignValue = updatedLead.getCampaign();
+//            if (campaignValue != null && !campaignValue.trim().isEmpty()) {
+//                Campaign campaign = existingLead.getCampaignEntity();
+//                if (campaign == null) {
+//                    campaign = new Campaign();
+//                    campaign.setCampaignName(campaignValue);
+//                    existingLead.addCampaign(campaign);
+//                } else {
+//                    campaign.setCampaignName(campaignValue);
+//                }
+//            }
 
             LeadRegistration savedLead = leadRegRepository.save(existingLead);
             logger.info("Updated lead with ID: {}", savedLead.getLeadId());
@@ -150,10 +147,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
             
-            // Remove associated campaign if exists
-            if (lead.getCampaignEntity() != null) {
-                lead.removeCampaign();
-            }
+//            // Remove associated campaign if exists
+//            if (lead.getCampaignEntity() != null) {
+//                lead.removeCampaign();
+//            }
             
             leadRegRepository.delete(lead);
             logger.info("Deleted lead with ID: {}", leadId);

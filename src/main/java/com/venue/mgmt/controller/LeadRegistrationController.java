@@ -69,8 +69,11 @@ public class LeadRegistrationController {
         if (isTokenExpired) {
             return ResponseEntity.status(401).build();
         }
+        String userId = JwtUtil.extractUserIdFromToken(authHeader);
+        request.setAttribute("userId", userId);
 
-        Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDate(sort, page, size);
+
+        Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedBy(sort, page, size,userId);
         return ResponseEntity.ok(leads);
     }
 
@@ -84,8 +87,10 @@ public class LeadRegistrationController {
         if (isTokenExpired) {
             return ResponseEntity.status(401).build();
         }
+        String userId = JwtUtil.extractUserIdFromToken(authHeader);
+        request.setAttribute("userId", userId);
 
-        List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query);
+        List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query,userId);
         return ResponseEntity.ok(leads);
     }
 

@@ -3,15 +3,11 @@ package com.venue.mgmt.util;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.venue.mgmt.controller.LeadRegistrationController;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
@@ -21,10 +17,12 @@ public class JwtUtil {
 
     private static final Logger logger = LogManager.getLogger(JwtUtil.class);
 
-    private static final String DEFAULT_USER = "system_user"; // Default user for development
+    // Default user for development
+    private static final String DEFAULT_USER = "system_user";
 
     @Value("${jwt.secret}")
     private String secret;
+
 
     public static boolean checkIfAuthTokenExpired(String authHeader) {
         if ((authHeader != null || !authHeader.trim().isEmpty()) && authHeader.startsWith("Bearer ")) {
