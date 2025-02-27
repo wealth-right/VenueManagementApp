@@ -1,32 +1,55 @@
 package com.venue.mgmt.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.springframework.http.HttpStatus;
+import com.venue.mgmt.entities.LeadRegistration;
 
-@ToString
-@Data
-@NoArgsConstructor
-public class ApiResponse<T> {
-    
-    @JsonProperty("responseCode")
-    private int responseCode;
-    
-    @JsonProperty("responseMessage")
-    private String responseMessage;
-    
-    @JsonProperty("data")
-    private T data;
+import java.util.List;
 
-    public ApiResponse(int responseCode, String responseMessage, T data) {
-        this.responseCode = responseCode;
-        this.responseMessage = responseMessage;
-        this.data = data;
+public class ApiResponse<T>{
+    private int statusCode;
+    private String statusMsg;
+    private String errorMsg;
+    private List<LeadRegistration> response;
+
+    public ApiResponse() {
     }
 
-    public static <T> ApiResponse<T> createResponseWithData(T data, String message) {
-        return new ApiResponse<T>(HttpStatus.OK.value(), message, data);
+    public ApiResponse(int statusCode, String statusMsg, String errorMsg, List<LeadRegistration> response) {
+        this.statusCode = statusCode;
+        this.statusMsg = statusMsg;
+        this.errorMsg = errorMsg;
+        this.response = response;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public String getStatusMsg() {
+        return statusMsg;
+    }
+
+    public void setStatusMsg(String statusMsg) {
+        this.statusMsg = statusMsg;
+    }
+
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+
+    public List<LeadRegistration> getResponse() {
+        return response;
+    }
+
+    public void setResponse(List<LeadRegistration> response) {
+        this.response = response;
     }
 }
+

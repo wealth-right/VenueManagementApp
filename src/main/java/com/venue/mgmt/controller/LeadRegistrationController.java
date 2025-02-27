@@ -1,6 +1,7 @@
 package com.venue.mgmt.controller;
 
 import com.venue.mgmt.entities.LeadRegistration;
+import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,7 +58,7 @@ public class LeadRegistrationController {
 
     @GetMapping
     @Operation(summary = "Get all leads", description = "Retrieves all leads with pagination support")
-    public ResponseEntity<Page<LeadRegistration>> getAllLeads(
+    public ResponseEntity<ApiResponse<Page<LeadRegistration>>> getAllLeads(
             @RequestHeader(name = "Authorization") String authHeader,
             @RequestParam(defaultValue = "desc") String sort,
             @RequestParam(defaultValue = "0") int page,
@@ -74,7 +75,13 @@ public class LeadRegistrationController {
 
 
         Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedBy(sort, page, size,userId);
-        return ResponseEntity.ok(leads);
+        ResponseEntity<Page<LeadRegistration>> responseEntity = ResponseEntity.ok(leads);
+        ApiResponse<Page<LeadRegistration>> response = new ApiResponse<>();
+        response.setStatusCode(responseEntity.getStatusCode().value());
+        response.setStatusMsg("Success");
+        response.setErrorMsg(null);
+        response.setResponse(leads.getContent());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/search")
