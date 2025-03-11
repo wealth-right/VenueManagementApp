@@ -2,7 +2,6 @@ package com.venue.mgmt.services.impl;
 
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
-import com.venue.mgmt.repositories.CampaignRepository;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.services.LeadRegistrationService;
