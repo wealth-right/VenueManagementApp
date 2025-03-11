@@ -1,5 +1,6 @@
 package com.venue.mgmt.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -48,9 +49,13 @@ public class Venue extends Auditable<String> {
     //use the vector datatype instead of string
     //add the pincode as a new column
 
+    @Transient
+    private int leadCount;
+
 
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
+    @JsonIgnore
     List<LeadRegistration> leads = new ArrayList<>();
 
     public void addLead(LeadRegistration lead) {

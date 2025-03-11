@@ -118,7 +118,10 @@ public class VenueServiceImpl implements VenueService {
     public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {
         Sort.Direction direction = Sort.Direction.fromString(sortDirection.toUpperCase());
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, "creationDate"));
-        return venueRepository.findAll(pageable);
+        Page<Venue> venues = venueRepository.findAll(pageable);
+
+        venues.forEach(venue -> venue.setLeadCount(venue.getLeads().size()));
+        return venues;
     }
 
 }
