@@ -3,6 +3,9 @@ package com.venue.mgmt.util;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +27,28 @@ public class JwtUtil {
     private String secret;
 
 
+    public static void validateToken(String token) throws Exception {
+      try{
+          if ((token != null || !token.trim().isEmpty()) && token.startsWith("Bearer ")) {
+              token = token.substring(7);
+          }
+          Jws<Claims> claimsJws = Jwts.parserBuilder()
+                  .build()
+                  .parseClaimsJws(token);
+          claimsJws.getBody();
+      }catch (Exception e){
+          throw new Exception("Invalid Token."+ e);
+      }
+    }
+
+    public static boolean isTokenValid(String token) {
+        try {
+            validateToken(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
     public static boolean checkIfAuthTokenExpired(String authHeader) {
         if ((authHeader != null || !authHeader.trim().isEmpty()) && authHeader.startsWith("Bearer ")) {
             authHeader = authHeader.substring(7);

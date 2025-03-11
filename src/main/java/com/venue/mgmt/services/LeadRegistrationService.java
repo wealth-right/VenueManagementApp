@@ -9,6 +9,7 @@ import java.util.List;
 @Service
 public interface LeadRegistrationService {
     LeadRegistration saveLead(LeadRegistration leadRegistration);
+    LeadRegistration getLeadById(Long leadId);
     Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedBy(String sortDirection, int page, int size, String userId);
     List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId);
     LeadRegistration updateLead(Long leadId, LeadRegistration leadRegistration);

@@ -1,6 +1,7 @@
 package com.venue.mgmt.response;
 
 import com.venue.mgmt.entities.LeadRegistration;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -8,12 +9,13 @@ public class ApiResponse<T>{
     private int statusCode;
     private String statusMsg;
     private String errorMsg;
-    private List<LeadRegistration> response;
+    private List<?> response;
+
 
     public ApiResponse() {
     }
 
-    public ApiResponse(int statusCode, String statusMsg, String errorMsg, List<LeadRegistration> response) {
+    public ApiResponse(int statusCode, String statusMsg, String errorMsg, List<?> response) {
         this.statusCode = statusCode;
         this.statusMsg = statusMsg;
         this.errorMsg = errorMsg;
@@ -44,11 +46,11 @@ public class ApiResponse<T>{
         this.errorMsg = errorMsg;
     }
 
-    public List<LeadRegistration> getResponse() {
+    public List<?> getResponse() {
         return response;
     }
 
-    public void setResponse(List<LeadRegistration> response) {
+    public void setResponse(List<?> response) {
         this.response = response;
     }
 }

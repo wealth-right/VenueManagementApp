@@ -35,7 +35,7 @@ public class NotificationServiceImpl implements INotificationService {
             // Call new ValidateUser API
             LoginRequest loginRequest = new LoginRequest();
             loginRequest.setMobileNumber(loginReq.getMobileNumber());
-            loginRequest.setLoginUserType("APP");
+            loginRequest.setLoginUserType(loginReq.getLoginUserType());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);

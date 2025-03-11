@@ -1,10 +1,12 @@
 package com.venue.mgmt.enums;
 
 public enum ProductType {
-    MUTUAL_FUND("Mutual Fund"),
-    INSURANCE("Insurance"),
-    FIXED_DEPOSIT("Fixed Deposit"),
+    MUTUAL_FUND("Mutual Funds"),
+    HEALTH_INSURANCE("Health Insurance"),
+    TERM_INSURANCE("Term Insurance"),
     LOANS("Loans");
+
+
 
     private final String displayName;
 

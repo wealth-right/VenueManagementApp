@@ -3,6 +3,8 @@ package com.venue.mgmt.controller;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.services.LeadRegistrationService;
+import com.venue.mgmt.services.OTPService;
+import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/venue-app/v1/leads")
@@ -33,10 +36,13 @@ public class LeadRegistrationController {
     private LeadRegistrationService leadRegistrationService;
 
     @Autowired
+    private OTPService otpService;
+
+    @Autowired
     private HttpServletRequest request;
 
     @PostMapping
-    @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details")
+    @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
     public ResponseEntity<LeadRegistration> createLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) {
@@ -52,9 +58,20 @@ public class LeadRegistrationController {
 
         leadRegistration.setActive(true);
         leadRegistration.setCreatedBy(userId);
+
+        // Generate and send OTP
+        String otp=null;
+        if (leadRegistration.getMobileNumber() != null && !leadRegistration.getMobileNumber().isEmpty()) {
+            otp = otpService.generateAndSendOTP(leadRegistration.getMobileNumber());
+        }
+        boolean isVerified = otpService.verifyOTP(leadRegistration.getMobileNumber(), otp);
+        if (isVerified) {
+            leadRegistration.setVerified(true);
+        }
         LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
         return ResponseEntity.ok(savedLead);
     }
+
 
     @GetMapping
     @Operation(summary = "Get all leads", description = "Retrieves all leads with pagination support")
@@ -66,26 +83,30 @@ public class LeadRegistrationController {
 
         logger.info("VenueManagementApp - Inside get All Leads Method with sort: {}, page: {}, size: {}", sort, page, size);
 
-        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-        if (isTokenExpired) {
-            return ResponseEntity.status(401).build();
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if (tokenValid) {
+            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+            if (isTokenExpired) {
+                return ResponseEntity.status(401).build();
+            }
+            String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute("userId", userId);
+
+
+            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedBy(sort, page, size, userId);
+            ResponseEntity<Page<LeadRegistration>> responseEntity = ResponseEntity.ok(leads);
+            ApiResponse<Page<LeadRegistration>> response = new ApiResponse<>();
+            response.setStatusCode(responseEntity.getStatusCode().value());
+            response.setStatusMsg("Success");
+            response.setErrorMsg(null);
+            response.setResponse(leads.getContent());
+            return ResponseEntity.ok(response);
         }
-        String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        request.setAttribute("userId", userId);
-
-
-        Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedBy(sort, page, size,userId);
-        ResponseEntity<Page<LeadRegistration>> responseEntity = ResponseEntity.ok(leads);
-        ApiResponse<Page<LeadRegistration>> response = new ApiResponse<>();
-        response.setStatusCode(responseEntity.getStatusCode().value());
-        response.setStatusMsg("Success");
-        response.setErrorMsg(null);
-        response.setResponse(leads.getContent());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(401).build();
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<LeadRegistration>> searchLeads(
+    public ResponseEntity<ApiResponse<List<LeadRegistration>>> searchLeads(
             @RequestHeader(name = "Authorization", required = true) String authHeader,
             @RequestParam(required = false) String query) {
 
@@ -98,7 +119,13 @@ public class LeadRegistrationController {
         request.setAttribute("userId", userId);
 
         List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query,userId);
-        return ResponseEntity.ok(leads);
+        ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
+        ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
+        response.setStatusCode(ok.getStatusCodeValue());
+        response.setStatusMsg("Success");
+        response.setErrorMsg(null);
+        response.setResponse(leads);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{leadId}")

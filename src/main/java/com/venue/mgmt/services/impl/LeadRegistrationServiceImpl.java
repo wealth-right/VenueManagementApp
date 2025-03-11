@@ -1,9 +1,12 @@
 package com.venue.mgmt.services.impl;
 
 import com.venue.mgmt.entities.LeadRegistration;
+import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.CampaignRepository;
 import com.venue.mgmt.repositories.LeadRegRepository;
+import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.services.LeadRegistrationService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,31 +30,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private LeadRegRepository leadRegRepository;
 
     @Autowired
-    private CampaignRepository campaignRepository;
-
-//    @PersistenceContext
-//    private EntityManager entityManager;
+    private VenueRepository venueRepository;
 
     @Override
     @Transactional
     public LeadRegistration saveLead(LeadRegistration leadRegistration) {
         try {
-            logger.info("Starting to save lead with campaign value: {}", leadRegistration.getCampaignId());
-            
-            // Handle campaign creation from the request
-            String campaignValue = leadRegistration.getCampaignId();
-//            if (campaignValue != null && !campaignValue.trim().isEmpty()) {
-//                Campaign campaign = new Campaign();
-//                campaign.setCampaignName(campaignValue);
-//
-//                // Save the campaign first
-//                campaign = campaignRepository.save(campaign);
-//
-//                // Now add it to the lead
-//                leadRegistration.addCampaign(campaign);
-//            }
-
+            Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
+                    .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
+            logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
             // Save the lead registration
+            leadRegistration.setVenue(venue);
             logger.info("Saving lead registration...");
             LeadRegistration savedLead = leadRegRepository.save(leadRegistration);
 
@@ -73,6 +62,18 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             return leadRegRepository.findAllByUserId(userId,pageable);
         } catch (Exception e) {
             logger.error("Error while fetching all leads: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LeadRegistration getLeadById(Long leadId) {
+        try {
+            return leadRegRepository.findById(leadId)
+                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
+        } catch (Exception e) {
+            logger.error("Error while fetching lead by id: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -111,11 +112,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             existingLead.setAge(updatedLead.getAge());
             existingLead.setFullName(updatedLead.getFullName());
             existingLead.setOccupation(updatedLead.getOccupation());
-            existingLead.setIncome(updatedLead.getIncome());
+            existingLead.setIncomeRange(updatedLead.getIncomeRange());
             existingLead.setDob(updatedLead.getDob());
             existingLead.setGender(updatedLead.getGender());
             existingLead.setAddress(updatedLead.getAddress());
-            existingLead.setLineOfBusiness(updatedLead.getLineOfBusiness());
             existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
             // Handle campaign update if provided
@@ -147,11 +147,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
             
-//            // Remove associated campaign if exists
-//            if (lead.getCampaignEntity() != null) {
-//                lead.removeCampaign();
-//            }
-            
+
             leadRegRepository.delete(lead);
             logger.info("Deleted lead with ID: {}", leadId);
         } catch (Exception e) {
