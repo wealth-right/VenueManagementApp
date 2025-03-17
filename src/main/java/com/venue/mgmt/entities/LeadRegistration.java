@@ -70,12 +70,6 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "email")
     String email;
 
-//    @OneToOne(mappedBy = "leadRegistration", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-//    @JsonManagedReference
-//    private Campaign campaignEntity;
-
-//    @Column(name = "line_of_business")
-//    String lineOfBusiness;
 
     @Column(name = "status")
     String status;

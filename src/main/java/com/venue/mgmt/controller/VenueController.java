@@ -91,21 +91,21 @@ public class VenueController {
         return ResponseEntity.status(401).build();
     }
 
-    @PutMapping("/{venueId}")
-    public ResponseEntity<Venue> updateVenue(
-            @RequestHeader(name = "Authorization") String authHeader,
-            @PathVariable Long venueId,
-            @Valid @RequestBody Venue venue) {
-        return ResponseEntity.ok(venueService.updateVenue(venueId, venue));
-    }
+//    @PutMapping("/{venueId}")
+//    public ResponseEntity<Venue> updateVenue(
+//            @RequestHeader(name = "Authorization") String authHeader,
+//            @PathVariable Long venueId,
+//            @Valid @RequestBody Venue venue) {
+//        return ResponseEntity.ok(venueService.updateVenue(venueId, venue));
+//    }
 
-    @DeleteMapping("/{venueId}")
-    public ResponseEntity<Void> deleteVenue(
-            @RequestHeader(name = "Authorization") String authHeader,
-            @PathVariable Long venueId) {
-        venueService.deleteVenue(venueId);
-        return ResponseEntity.ok().build();
-    }
+//    @DeleteMapping("/{venueId}")
+//    public ResponseEntity<Void> deleteVenue(
+//            @RequestHeader(name = "Authorization") String authHeader,
+//            @PathVariable Long venueId) {
+//        venueService.deleteVenue(venueId);
+//        return ResponseEntity.ok().build();
+//    }
 
     @PostMapping("/leads")
     public ResponseEntity<Venue> addLeadToVenue(
@@ -114,13 +114,13 @@ public class VenueController {
         return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration)); //pass the request body instead of leadId, remove the path variable
     }
 
-    @DeleteMapping("/{venueId}/leads/{leadId}")
-    public ResponseEntity<Venue> removeLeadFromVenue(
-            @RequestHeader(name = "Authorization") String authHeader,
-            @PathVariable Long venueId,
-            @PathVariable Long leadId) {
-        return ResponseEntity.ok(venueService.removeLeadFromVenue(venueId, leadId));
-    }
+//    @DeleteMapping("/{venueId}/leads/{leadId}")
+//    public ResponseEntity<Venue> removeLeadFromVenue(
+//            @RequestHeader(name = "Authorization") String authHeader,
+//            @PathVariable Long venueId,
+//            @PathVariable Long leadId) {
+//        return ResponseEntity.ok(venueService.removeLeadFromVenue(venueId, leadId));
+//    }
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(

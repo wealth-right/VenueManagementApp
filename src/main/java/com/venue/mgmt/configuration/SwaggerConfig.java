@@ -30,7 +30,7 @@ public class SwaggerConfig {
 
         // Configure local development server
         Server localServer = new Server()
-                .url("http://localhost:8081")
+                .url("http://localhost:8081/api")
                 .description("Local Server");
 
         // Define security scheme name

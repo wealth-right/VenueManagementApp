@@ -1,5 +1,6 @@
 package com.venue.mgmt.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.services.LeadRegistrationService;
@@ -58,18 +59,18 @@ public class LeadRegistrationController {
 
         leadRegistration.setActive(true);
         leadRegistration.setCreatedBy(userId);
-
-        // Generate and send OTP
-        String otp=null;
-        if (leadRegistration.getMobileNumber() != null && !leadRegistration.getMobileNumber().isEmpty()) {
-            otp = otpService.generateAndSendOTP(leadRegistration.getMobileNumber());
-        }
-        boolean isVerified = otpService.verifyOTP(leadRegistration.getMobileNumber(), otp);
-        if (isVerified) {
-            leadRegistration.setVerified(true);
-        }
         LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
         return ResponseEntity.ok(savedLead);
+
+        // Generate and send OTP
+//        String otp=null;
+//        if (leadRegistration.getMobileNumber() != null && !leadRegistration.getMobileNumber().isEmpty()) {
+//            otp = otpService.generateAndSendOTP(leadRegistration.getMobileNumber());
+//        }
+//        boolean isVerified = otpService.verifyOTP(leadRegistration.getMobileNumber(), otp);
+//        if (isVerified) {
+//            leadRegistration.setVerified(true);
+//        }
     }
 
 
