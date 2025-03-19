@@ -1,10 +1,13 @@
 package com.venue.mgmt.response;
 
 import com.venue.mgmt.entities.LeadRegistration;
+import com.venue.mgmt.entities.Venue;
+import lombok.Data;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
+@Data
 public class ApiResponse<T>{
     private int statusCode;
     private String statusMsg;
@@ -12,46 +15,55 @@ public class ApiResponse<T>{
     private List<?> response;
 
 
-    public ApiResponse() {
-    }
+    private Venue venueDetails; // Add this field
 
-    public ApiResponse(int statusCode, String statusMsg, String errorMsg, List<?> response) {
-        this.statusCode = statusCode;
-        this.statusMsg = statusMsg;
-        this.errorMsg = errorMsg;
-        this.response = response;
-    }
+    private PaginationDetails paginationDetails; // Add this field
+//    public Venue getVenueDetails() {
+//        return venueDetails;
+//    }
+//
+//    public void setVenueDetails(Venue venueDetails) {
+//        this.venueDetails = venueDetails;
+//    }
 
-    public int getStatusCode() {
-        return statusCode;
-    }
 
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
+//    public ApiResponse() {
+//    }
 
-    public String getStatusMsg() {
-        return statusMsg;
-    }
 
-    public void setStatusMsg(String statusMsg) {
-        this.statusMsg = statusMsg;
-    }
+//    public int getStatusCode() {
+//        return statusCode;
+//    }
+//
+//    public void setStatusCode(int statusCode) {
+//        this.statusCode = statusCode;
+//    }
+//
+//    public String getStatusMsg() {
+//        return statusMsg;
+//    }
+//
+//    public void setStatusMsg(String statusMsg) {
+//        this.statusMsg = statusMsg;
+//    }
+//
+//    public String getErrorMsg() {
+//        return errorMsg;
+//    }
+//
+//    public void setErrorMsg(String errorMsg) {
+//        this.errorMsg = errorMsg;
+//    }
+//
+//    public List<?> getResponse() {
+//        return response;
+//    }
+//
+//    public void setResponse(List<?> response) {
+//        this.response = response;
+//    }
 
-    public String getErrorMsg() {
-        return errorMsg;
-    }
 
-    public void setErrorMsg(String errorMsg) {
-        this.errorMsg = errorMsg;
-    }
 
-    public List<?> getResponse() {
-        return response;
-    }
-
-    public void setResponse(List<?> response) {
-        this.response = response;
-    }
 }
 

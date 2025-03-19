@@ -17,7 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -89,17 +88,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public LeadRegistration getLeadById(Long leadId) {
-        try {
-            return leadRegRepository.findById(leadId)
-                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-        } catch (Exception e) {
-            logger.error("Error while fetching lead by id: {}", e.getMessage(), e);
-            throw e;
-        }
-    }
 
     @Override
     @Transactional(readOnly = true)

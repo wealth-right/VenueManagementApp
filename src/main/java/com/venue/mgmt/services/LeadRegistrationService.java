@@ -11,7 +11,6 @@ import java.util.List;
 @Service
 public interface LeadRegistrationService {
     LeadRegistration saveLead(LeadRegistration leadRegistration);
-    LeadRegistration getLeadById(Long leadId);
     Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedBy(String sortDirection, int page, int size, String userId);
 
     Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page, int size, String userId, Long venueId, Date startDate, Date endDate);

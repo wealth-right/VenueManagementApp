@@ -1,6 +1,7 @@
 package com.venue.mgmt.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +18,8 @@ import java.util.List;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "venue", schema = "public")
+@Table(name = "venue", schema = "leadmgmt")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Venue extends Auditable<String> {
 
     private static final Logger logger = LogManager.getLogger(Venue.class);

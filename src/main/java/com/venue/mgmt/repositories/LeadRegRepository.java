@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @Repository
 public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long> {
-    Optional<LeadRegistration> findByFullName(String fullName);
 
     Optional<LeadRegistration> findByLeadId(Long leadId);
 
@@ -31,7 +30,9 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
     Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateAfter(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, Pageable pageable);
 
     @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate <= :endDate")
-    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBefore(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("endDate") Date endDate, Pageable pageable);
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBefore(@Param("userId") String userId,
+                                                                          @Param("venueId") Long venueId,
+                                                                          @Param("endDate") Date endDate, Pageable pageable);
     
     @Query(value = "SELECT * FROM lead_registration l " +
            "WHERE l.is_active = true " +

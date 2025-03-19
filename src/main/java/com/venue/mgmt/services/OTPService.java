@@ -1,11 +1,11 @@
 package com.venue.mgmt.services;
 
-import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.OTP;
 import com.venue.mgmt.entities.OtpDetails;
 import com.venue.mgmt.exception.AlreadyExistsException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.OtpDetailsRepository;
+import com.venue.mgmt.request.ValidateOtpRequest;
 import com.venue.mgmt.util.CommonUtils;
 import com.venue.mgmt.util.OtpDetailsUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +26,6 @@ import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 
 @Service
 public class OTPService extends OtpDetailsUtils {
-    private final Map<String, OTPData> otpStore = new HashMap<>();
 
     @Autowired
     private OtpDetailsRepository otpDetailsRepository;
@@ -36,73 +35,75 @@ public class OTPService extends OtpDetailsUtils {
 
     @Autowired
     private OTP otpPath;
-    private static final int OTP_LENGTH = 6;
-    private static final long OTP_VALID_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
     @Autowired
     private RestTemplate restTemplate;
+    private static final int OTP_LENGTH = 6;
+    private static final long OTP_VALID_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
     private static final Logger logger = LogManager.getLogger(OTPService.class);
-    public OtpDetails generateAndSendOTP(Long leadId){
+
+    public OtpDetails generateAndSendOTP(ValidateOtpRequest validateOtpRequest, String userId) {
         Optional<OtpDetails> optionalOtpDetails;
         LocalDateTime lastCreationDate;
         logger.info("OTPService - Inside generateAndSendOTP method");
-        Optional<LeadRegistration> leadRecord = leadRegRepository.findByLeadId(leadId);
-        String mobileNumber = null;
-        if(leadRecord.isPresent()) {
-            mobileNumber = leadRecord.get().getMobileNumber();
-            List<OtpDetails> otpDetailsList = otpDetailsRepository.findByMobileNo(mobileNumber);
-            if (!otpDetailsList.isEmpty() && otpDetailsList.size() >= otpPath.getNoOfAttempt()) {
-                optionalOtpDetails = otpDetailsList.stream().findFirst();
-                lastCreationDate = CommonUtils.getLocalDateTime(optionalOtpDetails.get().getCreationDate());
-                long timeSinceLastAttempt = ChronoUnit.MILLIS.between(lastCreationDate, LocalDateTime.now());
-
-                if (timeSinceLastAttempt < otpPath.getBlockTime()) {
-                    long remainingTimeMinutes = (otpPath.getBlockTime() - timeSinceLastAttempt) / 60000;
-                    throw new AlreadyExistsException(EXCEED_ATTEMPTS + TRY_AFTER + remainingTimeMinutes + MINUTES);
-                }
+        List<OtpDetails> otpDetailsList = otpDetailsRepository.findByLeadIdAndMobileNo(validateOtpRequest.getLeadId(), validateOtpRequest.getMobileNumber());
+        if (!otpDetailsList.isEmpty() && otpDetailsList.size() >= otpPath.getNoOfAttempt()) {
+            optionalOtpDetails = otpDetailsList.stream().findFirst();
+            lastCreationDate = CommonUtils.getLocalDateTime(optionalOtpDetails.get().getCreationDate());
+            long timeSinceLastAttempt = ChronoUnit.MILLIS.between(lastCreationDate, LocalDateTime.now());
+            if (timeSinceLastAttempt < otpPath.getBlockTime()) {
+                long remainingTimeMinutes = (otpPath.getBlockTime() - timeSinceLastAttempt) / 60000;
+                throw new AlreadyExistsException(EXCEED_ATTEMPTS + TRY_AFTER + remainingTimeMinutes + MINUTES);
             }
         }
         OtpDetails otpDetails = new OtpDetails();
         long otp = generateOTPSMS();
         logger.info("OTP generated: {}", otp);
         String message = MAIL_BODY.replaceFirst("\\{#var#}",
-                String.valueOf(otp)).replaceFirst("\\{#var#}", String.valueOf(otpPath.getOtpExpiry()));
-        try{
-            String smsResponse = sendSMS(mobileNumber, message);
-            otpDetails.setMobileNo(mobileNumber);
+                String.valueOf(otp)).replaceFirst("\\{#var#}",
+                String.valueOf(otpPath.getOtpExpiry()));
+        try {
+            sendSMS(validateOtpRequest.getMobileNumber(), message);
+            otpDetails.setMobileNo(validateOtpRequest.getMobileNumber());
+            otpDetails.setLeadId(validateOtpRequest.getLeadId());
             otpDetails.setOtp((String.valueOf(otp)));
             otpDetails.setSmsResponse(message);
+            otpDetails.setCreatedBy(userId);
             otpDetailsRepository.save(otpDetails);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return otpDetails;
     }
 
-    public boolean verifyOTP(String mobileNumber, String otp) {
-        OTPData otpData = otpStore.get(mobileNumber);
-        if (otpData != null) {
-            long currentTime = Instant.now().toEpochMilli();
-            if (currentTime - otpData.timestamp <= OTP_VALID_DURATION && otpData.otp.equals(otp)) {
-                otpStore.remove(mobileNumber); // Remove OTP after successful verification
-                return true;
-            }
-            // Remove expired OTP
-            if (currentTime - otpData.timestamp > OTP_VALID_DURATION) {
-                otpStore.remove(mobileNumber);
+    public boolean validateOtp(ValidateOtpRequest validateOtpRequest) {
+        // Fetch the latest OTP record based on leadId and mobileNumber
+        List<OtpDetails> otpDetailsList = otpDetailsRepository.findByLeadIdAndMobileNo(
+                validateOtpRequest.getLeadId(), validateOtpRequest.getMobileNumber());
+        if (otpDetailsList != null && !otpDetailsList.isEmpty()) {
+            // Sort the list by creation date in descending order and get the first record
+            OtpDetails latestOtpDetails = otpDetailsList.stream()
+                    .sorted((o1, o2) -> o2.getCreationDate().compareTo(o1.getCreationDate()))
+                    .findFirst()
+                    .orElse(null);
+            // Validate the OTP
+            if (latestOtpDetails.getOtp().equals(validateOtpRequest.getOtp())) {
+                long currentTime = Instant.now().toEpochMilli();
+                long otpCreationTime = latestOtpDetails.getCreationDate().toInstant().toEpochMilli();
+                long otpExpiryTime = otpCreationTime + OTP_VALID_DURATION;
+                // Check if the OTP is still valid
+                if (currentTime <= otpExpiryTime) {
+                    leadRegRepository.findById(validateOtpRequest.getLeadId()).ifPresent(lead -> {
+                        lead.setVerified(true);
+                        leadRegRepository.save(lead);
+                    });
+                    otpDetailsList.get(0).getId();
+                    return true;
+                }
             }
         }
         return false;
     }
 
-
-    private static class OTPData {
-        final String otp;
-        final long timestamp;
-
-        OTPData(String otp, long timestamp) {
-            this.otp = otp;
-            this.timestamp = timestamp;
-        }
-    }
 }

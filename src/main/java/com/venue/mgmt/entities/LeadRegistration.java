@@ -17,7 +17,7 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @DynamicUpdate
-@Table(name = "lead_registration", schema = "public")
+@Table(name = "lead_registration", schema = "leadmgmt")
 public class LeadRegistration extends Auditable<String> {
 
     @Id
@@ -57,6 +57,10 @@ public class LeadRegistration extends Auditable<String> {
 
     @Column(name = "life_stage")
     private String lifeStage;
+
+    @Column(name = "line_of_business")
+    private String lineOfBusiness;
+
 
     @Column(name = "address")
     String address;
@@ -262,6 +266,14 @@ public class LeadRegistration extends Auditable<String> {
 
     public void setVenue(Venue venue) {
         this.venue = venue;
+    }
+
+    public String getLineOfBusiness() {
+        return lineOfBusiness;
+    }
+
+    public void setLineOfBusiness(String lineOfBusiness) {
+        this.lineOfBusiness = lineOfBusiness;
     }
 
 

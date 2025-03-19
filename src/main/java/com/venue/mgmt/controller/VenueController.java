@@ -111,7 +111,7 @@ public class VenueController {
     public ResponseEntity<Venue> addLeadToVenue(
             @RequestHeader(name = "Authorization") String authHeader,
             @RequestBody LeadRegistration leadRegistration) {
-        return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration)); //pass the request body instead of leadId, remove the path variable
+        return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration));
     }
 
 //    @DeleteMapping("/{venueId}/leads/{leadId}")

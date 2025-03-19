@@ -1,7 +1,9 @@
 package com.venue.mgmt.controller;
 
 import com.venue.mgmt.entities.LeadRegistration;
+import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.response.ApiResponse;
+import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.OTPService;
 import com.venue.mgmt.util.JWTValidator;
@@ -37,6 +39,9 @@ public class LeadRegistrationController {
 
     @Autowired
     private OTPService otpService;
+
+    @Autowired
+    private VenueRepository venueRepository;
 
     @Autowired
     private HttpServletRequest request;
@@ -102,6 +107,14 @@ public class LeadRegistrationController {
 
             response.setErrorMsg(null);
             response.setResponse(leads.getContent());
+            if (venueId != null) {
+                response.setVenueDetails(venueRepository.findById(venueId).orElse(null));
+            }
+            PaginationDetails paginationDetails = new PaginationDetails();
+            paginationDetails.setCurrentPage(leads.getNumber());
+            paginationDetails.setTotalRecords(leads.getTotalElements());
+            paginationDetails.setTotalPages(leads.getTotalPages());
+            response.setPaginationDetails(paginationDetails);
             return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
@@ -173,7 +186,6 @@ public class LeadRegistrationController {
             if (isTokenExpired) {
                 return ResponseEntity.status(401).build();
             }
-
             try {
                 leadRegistrationService.deleteLead(leadId);
                 return ResponseEntity.ok().build();
