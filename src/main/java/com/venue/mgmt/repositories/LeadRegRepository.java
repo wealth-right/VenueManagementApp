@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +21,17 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
 
     @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId")
     Page<LeadRegistration> findAllByUserId(@Param("userId") String userId, Pageable pageable);
+
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId")
+    Page<LeadRegistration> findAllByUserIdAndVenueId(@Param("userId") String userId, @Param("venueId") Long venueId, Pageable pageable);
+
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate BETWEEN :startDate AND :endDate")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBetween(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, @Param("endDate") Date endDate, Pageable pageable);
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate >= :startDate")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateAfter(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, Pageable pageable);
+
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate <= :endDate")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBefore(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("endDate") Date endDate, Pageable pageable);
     
     @Query(value = "SELECT * FROM lead_registration l " +
            "WHERE l.is_active = true " +

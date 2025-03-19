@@ -17,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -59,6 +61,28 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             Sort sort = Sort.by(direction, "creationDate");
             Pageable pageable = PageRequest.of(page, size, sort);
             return leadRegRepository.findAllByUserId(userId,pageable);
+        } catch (Exception e) {
+            logger.error("Error while fetching all leads: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page, int size, String userId, Long venueId, Date startDate, Date endDate) {
+        try {
+            Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
+                    Sort.Direction.DESC : Sort.Direction.ASC;
+            Sort sort = Sort.by(direction, "creationDate");
+            Pageable pageable = PageRequest.of(page, size, sort);
+            if (startDate != null && endDate != null) {
+                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBetween(userId, venueId, startDate, endDate, pageable);
+            } else if (startDate != null) {
+                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateAfter(userId, venueId, startDate, pageable);
+            } else if (endDate != null) {
+                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBefore(userId, venueId, endDate, pageable);
+            } else {
+                return leadRegRepository.findAllByUserIdAndVenueId(userId, venueId, pageable);
+            }
         } catch (Exception e) {
             logger.error("Error while fetching all leads: {}", e.getMessage(), e);
             throw e;
@@ -117,18 +141,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             existingLead.setAddress(updatedLead.getAddress());
             existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
-            // Handle campaign update if provided
-//            String campaignValue = updatedLead.getCampaign();
-//            if (campaignValue != null && !campaignValue.trim().isEmpty()) {
-//                Campaign campaign = existingLead.getCampaignEntity();
-//                if (campaign == null) {
-//                    campaign = new Campaign();
-//                    campaign.setCampaignName(campaignValue);
-//                    existingLead.addCampaign(campaign);
-//                } else {
-//                    campaign.setCampaignName(campaignValue);
-//                }
-//            }
 
             LeadRegistration savedLead = leadRegRepository.save(existingLead);
             logger.info("Updated lead with ID: {}", savedLead.getLeadId());

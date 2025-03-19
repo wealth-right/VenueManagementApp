@@ -1,6 +1,5 @@
 package com.venue.mgmt.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.services.LeadRegistrationService;
@@ -19,9 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/venue-app/v1/leads")
@@ -46,31 +45,25 @@ public class LeadRegistrationController {
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
     public ResponseEntity<LeadRegistration> createLead(
             @RequestHeader(name = "Authorization") String authHeader,
-            @Valid @RequestBody LeadRegistration leadRegistration) {
+            @Valid @RequestBody LeadRegistration leadRegistration) throws Exception {
 
         logger.info("VenueManagementApp - Inside create Lead Method");
-        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-        if (isTokenExpired) {
-            logger.warn("Token is expired");
-            return ResponseEntity.status(401).build();
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if(tokenValid) {
+            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+            if (isTokenExpired) {
+                logger.warn("Token is expired");
+                return ResponseEntity.status(401).build();
+            }
+            String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute("userId", userId);
+
+            leadRegistration.setActive(true);
+            leadRegistration.setCreatedBy(userId);
+            LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
+            return ResponseEntity.ok(savedLead);
         }
-        String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        request.setAttribute("userId", userId);
-
-        leadRegistration.setActive(true);
-        leadRegistration.setCreatedBy(userId);
-        LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
-        return ResponseEntity.ok(savedLead);
-
-        // Generate and send OTP
-//        String otp=null;
-//        if (leadRegistration.getMobileNumber() != null && !leadRegistration.getMobileNumber().isEmpty()) {
-//            otp = otpService.generateAndSendOTP(leadRegistration.getMobileNumber());
-//        }
-//        boolean isVerified = otpService.verifyOTP(leadRegistration.getMobileNumber(), otp);
-//        if (isVerified) {
-//            leadRegistration.setVerified(true);
-//        }
+        return ResponseEntity.status(401).build();
     }
 
 
@@ -80,7 +73,11 @@ public class LeadRegistrationController {
             @RequestHeader(name = "Authorization") String authHeader,
             @RequestParam(defaultValue = "desc") String sort,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) throws Exception {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Long venueId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) throws Exception {
+
 
         logger.info("VenueManagementApp - Inside get All Leads Method with sort: {}, page: {}, size: {}", sort, page, size);
 
@@ -92,13 +89,17 @@ public class LeadRegistrationController {
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
             request.setAttribute("userId", userId);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            Date start = startDate != null ? formatter.parse(startDate) : null;
+            Date end = endDate != null ? formatter.parse(endDate) : null;
 
-
-            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedBy(sort, page, size, userId);
+            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
+                    (sort, page, size, userId,venueId,start,end);
             ResponseEntity<Page<LeadRegistration>> responseEntity = ResponseEntity.ok(leads);
             ApiResponse<Page<LeadRegistration>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
             response.setStatusMsg("Success");
+
             response.setErrorMsg(null);
             response.setResponse(leads.getContent());
             return ResponseEntity.ok(response);
@@ -109,24 +110,27 @@ public class LeadRegistrationController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<LeadRegistration>>> searchLeads(
             @RequestHeader(name = "Authorization", required = true) String authHeader,
-            @RequestParam(required = false) String query) {
-
+            @RequestParam(required = false) String query) throws Exception {
         logger.info("VenueManagementApp - Inside search Leads Method with query: {}", query);
-        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-        if (isTokenExpired) {
-            return ResponseEntity.status(401).build();
-        }
-        String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        request.setAttribute("userId", userId);
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if (tokenValid) {
+            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+            if (isTokenExpired) {
+                return ResponseEntity.status(401).build();
+            }
+            String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute("userId", userId);
 
-        List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query,userId);
-        ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
-        ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
-        response.setStatusCode(ok.getStatusCodeValue());
-        response.setStatusMsg("Success");
-        response.setErrorMsg(null);
-        response.setResponse(leads);
-        return ResponseEntity.ok(response);
+            List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
+            ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
+            ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
+            response.setStatusCode(ok.getStatusCodeValue());
+            response.setStatusMsg("Success");
+            response.setErrorMsg(null);
+            response.setResponse(leads);
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.status(401).build();
     }
 
     @PutMapping("/{leadId}")
@@ -134,10 +138,11 @@ public class LeadRegistrationController {
     public ResponseEntity<LeadRegistration> updateLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @PathVariable Long leadId,
-            @Valid @RequestBody LeadRegistration leadRegistration) {
+            @Valid @RequestBody LeadRegistration leadRegistration) throws Exception {
 
         logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
-
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if (tokenValid){
         boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
         if (isTokenExpired) {
             return ResponseEntity.status(401).build();
@@ -151,27 +156,32 @@ public class LeadRegistrationController {
             return ResponseEntity.notFound().build();
         }
     }
+        return ResponseEntity.status(401).build();
+    }
 
 
     @DeleteMapping("/{leadId}")
     @Operation(summary = "Delete a lead", description = "Deletes an existing lead by its ID")
     public ResponseEntity<Void> deleteLead(
             @RequestHeader(name = "Authorization") String authHeader,
-            @PathVariable Long leadId) {
+            @PathVariable Long leadId) throws Exception {
 
         logger.info("VenueManagementApp - Inside delete Lead Method for leadId: {}", leadId);
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if (tokenValid) {
+            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+            if (isTokenExpired) {
+                return ResponseEntity.status(401).build();
+            }
 
-        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-        if (isTokenExpired) {
-            return ResponseEntity.status(401).build();
+            try {
+                leadRegistrationService.deleteLead(leadId);
+                return ResponseEntity.ok().build();
+            } catch (RuntimeException e) {
+                logger.error("Error deleting lead: {}", e.getMessage());
+                return ResponseEntity.notFound().build();
+            }
         }
-
-        try {
-            leadRegistrationService.deleteLead(leadId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            logger.error("Error deleting lead: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.status(401).build();
     }
 }
