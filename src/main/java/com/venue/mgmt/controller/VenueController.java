@@ -114,13 +114,6 @@ public class VenueController {
         return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration));
     }
 
-//    @DeleteMapping("/{venueId}/leads/{leadId}")
-//    public ResponseEntity<Venue> removeLeadFromVenue(
-//            @RequestHeader(name = "Authorization") String authHeader,
-//            @PathVariable Long venueId,
-//            @PathVariable Long leadId) {
-//        return ResponseEntity.ok(venueService.removeLeadFromVenue(venueId, leadId));
-//    }
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(

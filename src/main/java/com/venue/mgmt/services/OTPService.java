@@ -1,5 +1,6 @@
 package com.venue.mgmt.services;
 
+import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.entities.OTP;
 import com.venue.mgmt.entities.OtpDetails;
 import com.venue.mgmt.exception.AlreadyExistsException;
@@ -16,12 +17,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-
+import static com.venue.mgmt.constant.ErrorMsgConstants.*;
 import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 
 @Service
@@ -54,7 +54,7 @@ public class OTPService extends OtpDetailsUtils {
             long timeSinceLastAttempt = ChronoUnit.MILLIS.between(lastCreationDate, LocalDateTime.now());
             if (timeSinceLastAttempt < otpPath.getBlockTime()) {
                 long remainingTimeMinutes = (otpPath.getBlockTime() - timeSinceLastAttempt) / 60000;
-                throw new AlreadyExistsException(EXCEED_ATTEMPTS + TRY_AFTER + remainingTimeMinutes + MINUTES);
+                throw new AlreadyExistsException(LIMIT_EXCEEDED + remainingTimeMinutes + ErrorMsgConstants.MINUTES);
             }
         }
         OtpDetails otpDetails = new OtpDetails();
@@ -88,19 +88,32 @@ public class OTPService extends OtpDetailsUtils {
                     .findFirst()
                     .orElse(null);
             // Validate the OTP
-            if (latestOtpDetails.getOtp().equals(validateOtpRequest.getOtp())) {
-                long currentTime = Instant.now().toEpochMilli();
-                long otpCreationTime = latestOtpDetails.getCreationDate().toInstant().toEpochMilli();
-                long otpExpiryTime = otpCreationTime + OTP_VALID_DURATION;
-                // Check if the OTP is still valid
-                if (currentTime <= otpExpiryTime) {
-                    leadRegRepository.findById(validateOtpRequest.getLeadId()).ifPresent(lead -> {
-                        lead.setVerified(true);
-                        leadRegRepository.save(lead);
-                    });
-                    otpDetailsList.get(0).getId();
-                    return true;
+            long currentTime = Instant.now().toEpochMilli();
+            long otpCreationTime = latestOtpDetails.getCreationDate().toInstant().toEpochMilli();
+            long otpExpiryTime = otpCreationTime + OTP_VALID_DURATION;
+            if (latestOtpDetails.getAttempts() >= 3) {
+                LocalDateTime creationDateTime = latestOtpDetails.getCreationDate().toInstant()
+                        .atZone(ZoneId.systemDefault()).toLocalDateTime();
+                long timeSinceLastAttempt = ChronoUnit.MILLIS.between(creationDateTime, LocalDateTime.now());
+                if (timeSinceLastAttempt < otpPath.getBlockTime()) {
+                    long remainingTimeMinutes = (otpPath.getBlockTime() - timeSinceLastAttempt) / 60000;
+                    throw new AlreadyExistsException(LIMIT_EXCEEDED + remainingTimeMinutes + " minutes.");
+                } else {
+                    latestOtpDetails.setAttempts(0); // Reset attempts after block time
                 }
+            }
+            // Check if the OTP is still valid
+            if (latestOtpDetails.getOtp().equals(validateOtpRequest.getOtp()) && currentTime <= otpExpiryTime) {
+                leadRegRepository.findById(validateOtpRequest.getLeadId()).ifPresent(lead -> {
+                    lead.setVerified(true);
+                    leadRegRepository.save(lead);
+                });
+                latestOtpDetails.setAttempts(0); // Reset attempts on successful validation
+                otpDetailsRepository.save(latestOtpDetails);
+                return true;
+            } else {
+                latestOtpDetails.setAttempts(latestOtpDetails.getAttempts() + 1); // Increment attempts on failure
+                otpDetailsRepository.save(latestOtpDetails);
             }
         }
         return false;
