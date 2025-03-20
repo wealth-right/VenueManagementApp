@@ -79,8 +79,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                 return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateAfter(userId, venueId, startDate, pageable);
             } else if (endDate != null) {
                 return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBefore(userId, venueId, endDate, pageable);
-            } else {
+            } else if (venueId!=null){
                 return leadRegRepository.findAllByUserIdAndVenueId(userId, venueId, pageable);
+            }else{
+                return leadRegRepository.findAllByUserId(userId, pageable);
             }
         } catch (Exception e) {
             logger.error("Error while fetching all leads: {}", e.getMessage(), e);

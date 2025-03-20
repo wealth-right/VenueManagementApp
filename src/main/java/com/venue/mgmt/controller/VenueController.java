@@ -80,7 +80,7 @@ public class VenueController {
             paginationDetails.setCurrentPage(venues.getNumber());
             paginationDetails.setTotalRecords(venues.getTotalElements());
             paginationDetails.setTotalPages(venues.getTotalPages());
-            response.setPaginationDetails(paginationDetails);
+            response.setPagination(paginationDetails);
 
             return ResponseEntity.ok(response);
         }

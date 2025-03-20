@@ -12,7 +12,7 @@ public class ApiResponse<T>{
     private String errorMsg;
     private List<?> response;
 //    private Venue venueDetails; // Add this field
-    private PaginationDetails paginationDetails; // Add this field
+    private PaginationDetails pagination; // Add this field
 
 
 

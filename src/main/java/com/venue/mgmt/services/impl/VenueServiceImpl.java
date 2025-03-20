@@ -1,5 +1,6 @@
 package com.venue.mgmt.services.impl;
 
+import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
@@ -30,6 +31,7 @@ public class VenueServiceImpl implements VenueService {
 
     @Autowired
     private LeadRegRepository leadRegRepository;
+
 
     @Override
     @Transactional
@@ -71,14 +73,14 @@ public class VenueServiceImpl implements VenueService {
                     venue.setAddress(updatedVenue.getAddress());
                     return venueRepository.save(venue);
                 })
-                .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + venueId));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMsgConstants.VENUE_NOT_FOUND + venueId));
     }
 
     @Override
     @Transactional
     public void deleteVenue(Long venueId) {
         Venue venue = venueRepository.findByVenueId(venueId)
-                .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + venueId));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMsgConstants.VENUE_NOT_FOUND + venueId));
         venue.setIsActive(false);
         venueRepository.save(venue);
     }
@@ -87,7 +89,7 @@ public class VenueServiceImpl implements VenueService {
     @Transactional
     public Venue addLeadToVenue(LeadRegistration leadRegistration) {
         Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
-                .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMsgConstants.VENUE_NOT_FOUND + leadRegistration.getVenue().getVenueId()));
         
         LeadRegistration lead = leadRegRepository.findByLeadId(leadRegistration.getLeadId())
                 .orElseThrow(() -> new EntityNotFoundException("Lead not found with id: " + leadRegistration.getLeadId()));
@@ -96,18 +98,6 @@ public class VenueServiceImpl implements VenueService {
         return venueRepository.save(venue);
     }
 
-    @Override
-    @Transactional
-    public Venue removeLeadFromVenue(Long venueId, Long leadId) {
-        Venue venue = venueRepository.findByVenueId(venueId)
-                .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + venueId));
-        
-        LeadRegistration lead = leadRegRepository.findByLeadId(leadId)
-                .orElseThrow(() -> new EntityNotFoundException("Lead not found with id: " + leadId));
-
-        venue.removeLead(lead);
-        return venueRepository.save(venue);
-    }
 
     @Override
     public Page<Venue> getAllVenuesSorted(String sortBy, String sortDirection, Double latitude, Double longitude, int page, int size) {
