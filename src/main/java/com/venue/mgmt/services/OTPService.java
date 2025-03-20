@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -38,7 +40,6 @@ public class OTPService extends OtpDetailsUtils {
 
     @Autowired
     private RestTemplate restTemplate;
-    private static final int OTP_LENGTH = 6;
     private static final long OTP_VALID_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
     private static final Logger logger = LogManager.getLogger(OTPService.class);
@@ -62,7 +63,8 @@ public class OTPService extends OtpDetailsUtils {
         logger.info("OTP generated: {}", otp);
         String message = MAIL_BODY.replaceFirst("\\{#var#}",
                 String.valueOf(otp)).replaceFirst("\\{#var#}",
-                String.valueOf(otpPath.getOtpExpiry()));
+                String.valueOf(otpPath.getOtpExpiry() / 60000));
+        message = URLDecoder.decode(message, StandardCharsets.UTF_8);
         try {
             sendSMS(validateOtpRequest.getMobileNumber(), message);
             otpDetails.setMobileNo(validateOtpRequest.getMobileNumber());
@@ -97,7 +99,7 @@ public class OTPService extends OtpDetailsUtils {
                 long timeSinceLastAttempt = ChronoUnit.MILLIS.between(creationDateTime, LocalDateTime.now());
                 if (timeSinceLastAttempt < otpPath.getBlockTime()) {
                     long remainingTimeMinutes = (otpPath.getBlockTime() - timeSinceLastAttempt) / 60000;
-                    throw new AlreadyExistsException(LIMIT_EXCEEDED + remainingTimeMinutes + " minutes.");
+                    throw new AlreadyExistsException(LIMIT_EXCEEDED + remainingTimeMinutes + MINUTES);
                 } else {
                     latestOtpDetails.setAttempts(0); // Reset attempts after block time
                 }
@@ -109,6 +111,7 @@ public class OTPService extends OtpDetailsUtils {
                     leadRegRepository.save(lead);
                 });
                 latestOtpDetails.setAttempts(0); // Reset attempts on successful validation
+                latestOtpDetails.setVerified(true);
                 otpDetailsRepository.save(latestOtpDetails);
                 return true;
             } else {
