@@ -11,7 +11,7 @@ public class ApiResponse<T>{
     private String statusMsg;
     private String errorMsg;
     private List<?> response;
-    private Venue venueDetails; // Add this field
+//    private Venue venueDetails; // Add this field
     private PaginationDetails paginationDetails; // Add this field
 
 

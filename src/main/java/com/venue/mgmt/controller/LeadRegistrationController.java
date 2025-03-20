@@ -1,6 +1,8 @@
 package com.venue.mgmt.controller;
 
+import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.LeadRegistration;
+import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.PaginationDetails;
@@ -18,11 +20,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/venue-app/v1/leads")
@@ -74,7 +78,7 @@ public class LeadRegistrationController {
 
     @GetMapping
     @Operation(summary = "Get all leads", description = "Retrieves all leads with pagination support")
-    public ResponseEntity<ApiResponse<Page<LeadRegistration>>> getAllLeads(
+    public ResponseEntity<ApiResponse<Page<LeadWithVenueDetails>>> getAllLeads(
             @RequestHeader(name = "Authorization") String authHeader,
             @RequestParam(defaultValue = "desc") String sort,
             @RequestParam(defaultValue = "0") int page,
@@ -100,22 +104,77 @@ public class LeadRegistrationController {
 
             Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
                     (sort, page, size, userId,venueId,start,end);
-            ResponseEntity<Page<LeadRegistration>> responseEntity = ResponseEntity.ok(leads);
-            ApiResponse<Page<LeadRegistration>> response = new ApiResponse<>();
-            response.setStatusCode(responseEntity.getStatusCode().value());
-            response.setStatusMsg("Success");
+            Venue venue = venueId != null ? venueRepository.findById(venueId).orElse(null) : null;
+            List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
+                    .map(lead -> {
+                        LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
+                        leadWithVenueDetails.setLeadId(lead.getLeadId());
+                        leadWithVenueDetails.setFullName(lead.getFullName());
+                        leadWithVenueDetails.setAge(lead.getAge());
+                        leadWithVenueDetails.setOccupation(lead.getOccupation());
+                        leadWithVenueDetails.setMobileNumber(lead.getMobileNumber());
+                        leadWithVenueDetails.setAddress(lead.getAddress());
+                        leadWithVenueDetails.setEmail(lead.getEmail());
+                        leadWithVenueDetails.setActive(lead.getActive());
+                        leadWithVenueDetails.setVerified(lead.getVerified());
+                        leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
+                        leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
+                        leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
+                        leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
+                        leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
+                        leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
+                        leadWithVenueDetails.setLifeStage(lead.getLifeStage());
+                        leadWithVenueDetails.setGender(lead.getGender());
+                        leadWithVenueDetails.setRemarks(lead.getRemarks());
+                        leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
+                        leadWithVenueDetails.setDeleted(lead.getDeleted());
+                        leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
 
+                        if (venue != null) {
+                            LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
+                            venueDetails.setVenueId(venue.getVenueId());
+                            venueDetails.setVenueName(venue.getVenueName());
+                            venueDetails.setLatitude(venue.getLatitude());
+                            venueDetails.setLongitude(venue.getLongitude());
+                            venueDetails.setActive(venue.getIsActive());
+                            venueDetails.setAddress(venue.getAddress());
+                            leadWithVenueDetails.setVenueDetails(venueDetails);
+                        }
+                        return leadWithVenueDetails;
+                    })
+                    .toList();
+
+            ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
+            response.setStatusCode(200);
+            response.setStatusMsg("Success");
             response.setErrorMsg(null);
-            response.setResponse(leads.getContent());
-            if (venueId != null) {
-                response.setVenueDetails(venueRepository.findById(venueId).orElse(null));
-            }
+            response.setResponse(leadWithVenueDetailsList);
+
             PaginationDetails paginationDetails = new PaginationDetails();
             paginationDetails.setCurrentPage(leads.getNumber());
             paginationDetails.setTotalRecords(leads.getTotalElements());
             paginationDetails.setTotalPages(leads.getTotalPages());
             response.setPaginationDetails(paginationDetails);
+
             return ResponseEntity.ok(response);
+//
+//            ResponseEntity<Page<LeadRegistration>> responseEntity = ResponseEntity.ok(leads);
+//            ApiResponse<Page<LeadRegistration>> response = new ApiResponse<>();
+//            response.setStatusCode(responseEntity.getStatusCode().value());
+//            response.setStatusMsg("Success");
+
+//            response.setErrorMsg(null);
+//            response.setResponse(leads.getContent());
+////            if (venueId != null) {
+////                response.setVenueDetails(venueRepository.findById(venueId).orElse(null));
+////            }
+//            PaginationDetails paginationDetails = new PaginationDetails();
+//            paginationDetails.setCurrentPage(leads.getNumber());
+//            paginationDetails.setTotalRecords(leads.getTotalElements());
+//            paginationDetails.setTotalPages(leads.getTotalPages());
+//            response.setPaginationDetails(paginationDetails);
+//
+//            return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
     }
