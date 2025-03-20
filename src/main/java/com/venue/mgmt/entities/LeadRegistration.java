@@ -97,7 +97,7 @@ public class LeadRegistration extends Auditable<String> {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "venue_id")
+    @JoinColumn(name = "venue_id", nullable = false)
     @JsonBackReference
     private Venue venue;
 

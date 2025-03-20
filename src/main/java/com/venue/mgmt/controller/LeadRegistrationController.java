@@ -78,7 +78,7 @@ public class LeadRegistrationController {
             @RequestParam(defaultValue = "desc") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) Long venueId,
+            @RequestParam(required = true) Long venueId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) throws Exception {
 
