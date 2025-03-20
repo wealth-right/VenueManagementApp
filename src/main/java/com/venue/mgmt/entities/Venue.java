@@ -12,7 +12,11 @@ import lombok.experimental.FieldDefaults;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -35,12 +39,12 @@ public class Venue extends Auditable<String> {
     String venueName;
 
     @NotNull(message = "Latitude is required")
-    @Column(name = "latitude", nullable = false)
-    Double latitude;
+    @Column(name = "latitude")
+    Double latitude;//non-mandatory
 
     @NotNull(message = "Longitude is required")
-    @Column(name = "longitude", nullable = false)
-    Double longitude;
+    @Column(name = "longitude")
+    Double longitude;//non-mandatory
 
     @Column(name = "is_active")
     private Boolean isActive;
@@ -59,6 +63,26 @@ public class Venue extends Auditable<String> {
     @JsonManagedReference
     @JsonIgnore
     List<LeadRegistration> leads = new ArrayList<>();
+
+    @Transient
+    private int leadCountToday;
+
+    public int getLeadCountToday() {
+        LocalDate today = LocalDate.now();
+        return (int) leads.stream()
+                .filter(lead -> {
+                    Date creationDate = lead.getCreationDate();
+                    LocalDate creationLocalDate = Instant.ofEpochMilli(creationDate.getTime())
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate();
+                    return creationLocalDate.equals(today);
+                })
+                .count();
+    }
+
+    public void setLeadCountToday(int leadCountToday) {
+        this.leadCountToday = leadCountToday;
+    }
 
     public void addLead(LeadRegistration lead) {
         leads.add(lead);

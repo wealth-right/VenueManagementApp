@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/verify")
+@RequestMapping("/venue-app/v1")
 public class OtpDetailController {
     private static final Logger logger = LogManager.getLogger(OtpDetailController.class);
 

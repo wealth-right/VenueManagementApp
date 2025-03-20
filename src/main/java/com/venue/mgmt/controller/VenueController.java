@@ -3,6 +3,7 @@ package com.venue.mgmt.controller;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.response.ApiResponse;
+import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.VenueService;
 import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
@@ -14,11 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import static com.venue.mgmt.constant.GeneralMsgConstants.TOKEN_EXPIRED;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/venues")
+@RequestMapping("/venue-app/v1/venues")
 public class VenueController {
 
     private static final Logger logger = LogManager.getLogger(VenueController.class);
@@ -37,7 +39,7 @@ public class VenueController {
         logger.info("VenueManagementApp - Inside create Venue Method");
         boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
         if (isTokenExpired) {
-            logger.warn("Token is expired");
+            logger.warn(TOKEN_EXPIRED);
             return ResponseEntity.status(401).build();
         }
         String userId = JwtUtil.extractUserIdFromToken(authHeader);
@@ -57,18 +59,29 @@ public class VenueController {
         if (tokenValid) {
         boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
         if (isTokenExpired) {
-            logger.warn("Token is expired");
+            logger.warn(TOKEN_EXPIRED);
             return ResponseEntity.status(401).build();
         }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
             request.setAttribute("userId", userId);
             Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(sort, page, size, userId);
+            venues.forEach(venue -> {
+                venue.setLeadCount(venue.getLeads().size());
+                venue.setLeadCountToday(venue.getLeadCountToday());
+            });
             ResponseEntity<Page<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<Page<Venue>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
             response.setStatusMsg("Success");
             response.setErrorMsg(null);
             response.setResponse(venues.getContent());
+
+            PaginationDetails paginationDetails = new PaginationDetails();
+            paginationDetails.setCurrentPage(venues.getNumber());
+            paginationDetails.setTotalRecords(venues.getTotalElements());
+            paginationDetails.setTotalPages(venues.getTotalPages());
+            response.setPaginationDetails(paginationDetails);
+
             return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
@@ -82,7 +95,7 @@ public class VenueController {
         if (tokenValid) {
             boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
             if (isTokenExpired) {
-                logger.warn("Token is expired");
+                logger.warn(TOKEN_EXPIRED);
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
@@ -91,21 +104,6 @@ public class VenueController {
         return ResponseEntity.status(401).build();
     }
 
-//    @PutMapping("/{venueId}")
-//    public ResponseEntity<Venue> updateVenue(
-//            @RequestHeader(name = "Authorization") String authHeader,
-//            @PathVariable Long venueId,
-//            @Valid @RequestBody Venue venue) {
-//        return ResponseEntity.ok(venueService.updateVenue(venueId, venue));
-//    }
-
-//    @DeleteMapping("/{venueId}")
-//    public ResponseEntity<Void> deleteVenue(
-//            @RequestHeader(name = "Authorization") String authHeader,
-//            @PathVariable Long venueId) {
-//        venueService.deleteVenue(venueId);
-//        return ResponseEntity.ok().build();
-//    }
 
     @PostMapping("/leads")
     public ResponseEntity<Venue> addLeadToVenue(
@@ -124,7 +122,6 @@ public class VenueController {
             @RequestParam(required = false) Double longitude,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        String userId = request.getUserPrincipal().getName();
         Page<Venue> venues = venueService.getAllVenuesSorted(sortBy, sortDirection, latitude, longitude, page, size);
         return ResponseEntity.ok(venues);
     }
