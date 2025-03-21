@@ -5,6 +5,8 @@ import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
+import com.venue.mgmt.request.CustomerRequest;
+import com.venue.mgmt.request.CustomerServiceClient;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
@@ -20,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -62,6 +65,30 @@ public class LeadRegistrationController {
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
 
+            // Create CustomerRequest object
+            CustomerRequest customerRequest = new CustomerRequest();
+            customerRequest.setTitle("Miss.");
+            customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
+            customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
+            customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
+            customerRequest.setFullname(leadRegistration.getFullName());
+            customerRequest.setEmailid(leadRegistration.getEmail());
+            customerRequest.setCountrycode("+91");
+            customerRequest.setMobileno(leadRegistration.getMobileNumber());
+            customerRequest.setAddedby(userId);
+            customerRequest.setAssignedto(userId);
+            customerRequest.setDob(leadRegistration.getDob().toString());
+            customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
+            customerRequest.setOccupation("01");
+            customerRequest.setTaxStatus("01");
+            customerRequest.setCountryOfResidence("India");
+            customerRequest.setSource("QuickTapApp");
+            customerRequest.setCustomertype("Prospect");
+            customerRequest.setChannelcode("SAFL");
+
+            // Save customer data
+            CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
+            customerServiceClient.saveCustomerData(customerRequest);
             leadRegistration.setActive(true);
             leadRegistration.setCreatedBy(userId);
             LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);

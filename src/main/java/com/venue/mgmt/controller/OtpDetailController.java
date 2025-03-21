@@ -8,7 +8,6 @@ import com.venue.mgmt.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +16,12 @@ import org.springframework.web.bind.annotation.*;
 public class OtpDetailController {
     private static final Logger logger = LogManager.getLogger(OtpDetailController.class);
 
-    @Autowired
-    private OTPService otpService;
+    private final OTPService otpService;
+
+
+    public OtpDetailController(OTPService otpService) {
+        this.otpService = otpService;
+    }
 
     @PostMapping("/sendOtp")
     public ResponseEntity<?> sendOtp(@RequestHeader(name = "Authorization", required = true) String authHeader,

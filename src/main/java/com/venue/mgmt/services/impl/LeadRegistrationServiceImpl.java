@@ -9,7 +9,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,11 +25,15 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private static final Logger logger = LogManager.getLogger(LeadRegistrationServiceImpl.class);
     
-    @Autowired
-    private LeadRegRepository leadRegRepository;
+    private final LeadRegRepository leadRegRepository;
 
-    @Autowired
-    private VenueRepository venueRepository;
+    private final VenueRepository venueRepository;
+
+    public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository) {
+        this.leadRegRepository = leadRegRepository;
+        this.venueRepository = venueRepository;
+
+    }
 
     @Override
     @Transactional
@@ -42,9 +45,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             // Save the lead registration
             leadRegistration.setVenue(venue);
             logger.info("Saving lead registration...");
-            LeadRegistration savedLead = leadRegRepository.save(leadRegistration);
-
-            return savedLead;
+            return leadRegRepository.save(leadRegistration);
         } catch (Exception e) {
             logger.error("Error while saving lead with campaign: {}", e.getMessage(), e);
             throw e;
