@@ -153,7 +153,7 @@ public class LeadRegistrationController {
             }
             Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
                     (sort, page, size, userId, venueId, start, end);
-            Venue venue = venueId != null ? venueRepository.findById(venueId).orElse(null) : null;
+
             List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
                     .map(lead -> {
                         LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
@@ -178,15 +178,16 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
                         leadWithVenueDetails.setDeleted(lead.getDeleted());
                         leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
-
-                        if (venue != null) {
+                        // Fetch venue details for each lead
+                        Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
+                        if (leadVenue != null) {
                             LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
-                            venueDetails.setVenueId(venue.getVenueId());
-                            venueDetails.setVenueName(venue.getVenueName());
-                            venueDetails.setLatitude(venue.getLatitude());
-                            venueDetails.setLongitude(venue.getLongitude());
-                            venueDetails.setActive(venue.getIsActive());
-                            venueDetails.setAddress(venue.getAddress());
+                            venueDetails.setVenueId(leadVenue.getVenueId());
+                            venueDetails.setVenueName(leadVenue.getVenueName());
+                            venueDetails.setLatitude(leadVenue.getLatitude());
+                            venueDetails.setLongitude(leadVenue.getLongitude());
+                            venueDetails.setActive(leadVenue.getIsActive());
+                            venueDetails.setAddress(leadVenue.getAddress());
                             leadWithVenueDetails.setVenueDetails(venueDetails);
                         }
                         return leadWithVenueDetails;
