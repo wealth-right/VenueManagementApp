@@ -1,6 +1,5 @@
 package com.venue.mgmt.controller;
 
-import com.venue.mgmt.constant.GeneralMsgConstants;
 import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
@@ -47,7 +46,7 @@ public class LeadRegistrationController {
 
     private final VenueRepository venueRepository;
 
-    private HttpServletRequest request;
+    private final HttpServletRequest request;
 
 
     public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository,HttpServletRequest request) {
@@ -91,7 +90,6 @@ public class LeadRegistrationController {
             customerRequest.setMobileno(leadRegistration.getMobileNumber());
             customerRequest.setAddedby(userId);
             customerRequest.setAssignedto(userId);
-//            customerRequest.setDob(leadRegistration.getDob().toString());
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             customerRequest.setOccupation("01");
             customerRequest.setTaxStatus("01");
@@ -165,6 +163,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setAddress(lead.getAddress());
                         leadWithVenueDetails.setEmail(lead.getEmail());
                         leadWithVenueDetails.setActive(lead.getActive());
+                        leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
                         leadWithVenueDetails.setVerified(lead.getVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
                         leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());

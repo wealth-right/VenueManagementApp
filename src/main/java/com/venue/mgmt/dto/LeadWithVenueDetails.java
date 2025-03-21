@@ -25,6 +25,7 @@ public class LeadWithVenueDetails {
     private String lastModifiedDate;
     private String incomeRange;
     private String lifeStage;
+    private String lineOfBusiness;
     private String gender;
     private String remarks;
     private String maritalStatus;
