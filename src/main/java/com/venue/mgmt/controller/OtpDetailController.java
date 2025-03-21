@@ -24,7 +24,7 @@ public class OtpDetailController {
     }
 
     @PostMapping("/sendOtp")
-    public ResponseEntity<?> sendOtp(@RequestHeader(name = "Authorization", required = true) String authHeader,
+    public ResponseEntity<OtpDetails> sendOtp(@RequestHeader(name = "Authorization", required = true) String authHeader,
                                      @RequestBody @Valid ValidateOtpRequest validateOtpRequest) throws Exception {
         logger.info("VenueManagementApp - Inside send otp method with lead Id : {}", validateOtpRequest.getLeadId());
         if(JWTValidator.validateToken(authHeader)){
@@ -39,7 +39,7 @@ public class OtpDetailController {
     }
 
     @PostMapping("/validateOtp")
-    public ResponseEntity<?> validateOtp(@RequestHeader(name="Authorization", required = true) String authHeader,
+    public ResponseEntity<Boolean> validateOtp(@RequestHeader(name="Authorization", required = true) String authHeader,
             @RequestBody @Valid ValidateOtpRequest validateOtpRequest) throws Exception {
         logger.info("VenueManagementApp - Inside validate otp method");
         if(JWTValidator.validateToken(authHeader)){

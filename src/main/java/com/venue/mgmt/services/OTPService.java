@@ -11,9 +11,7 @@ import com.venue.mgmt.util.CommonUtils;
 import com.venue.mgmt.util.OtpDetailsUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -23,23 +21,26 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import static com.venue.mgmt.constant.ErrorMsgConstants.*;
-import static com.venue.mgmt.constant.GeneralMsgConstants.*;
+
+import static com.venue.mgmt.constant.ErrorMsgConstants.LIMIT_EXCEEDED;
+import static com.venue.mgmt.constant.ErrorMsgConstants.MINUTES;
+import static com.venue.mgmt.constant.GeneralMsgConstants.MAIL_BODY;
 
 @Service
 public class OTPService extends OtpDetailsUtils {
 
-    @Autowired
-    private OtpDetailsRepository otpDetailsRepository;
+    private final OtpDetailsRepository otpDetailsRepository;
 
-    @Autowired
-    private LeadRegRepository leadRegRepository;
+    private final LeadRegRepository leadRegRepository;
 
-    @Autowired
-    private OTP otpPath;
+    private final OTP otpPath;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    public OTPService(OtpDetailsRepository otpDetailsRepository, LeadRegRepository leadRegRepository, OTP otpPath) {
+        this.otpDetailsRepository = otpDetailsRepository;
+        this.leadRegRepository = leadRegRepository;
+        this.otpPath = otpPath;
+    }
+
     private static final long OTP_VALID_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
     private static final Logger logger = LogManager.getLogger(OTPService.class);

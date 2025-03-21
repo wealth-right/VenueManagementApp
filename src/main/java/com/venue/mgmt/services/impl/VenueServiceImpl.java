@@ -3,6 +3,7 @@ package com.venue.mgmt.services.impl;
 import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.exception.VenueNotSavedException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.services.VenueService;
@@ -10,7 +11,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,12 +26,15 @@ public class VenueServiceImpl implements VenueService {
 
     private static final Logger logger = LogManager.getLogger(VenueServiceImpl.class);
 
-    @Autowired
-    private VenueRepository venueRepository;
+    private final VenueRepository venueRepository;
 
-    @Autowired
-    private LeadRegRepository leadRegRepository;
+    private final LeadRegRepository leadRegRepository;
 
+
+    public VenueServiceImpl(VenueRepository venueRepository, LeadRegRepository leadRegRepository) {
+        this.venueRepository = venueRepository;
+        this.leadRegRepository = leadRegRepository;
+    }
 
     @Override
     @Transactional
@@ -43,7 +46,7 @@ public class VenueServiceImpl implements VenueService {
             return venueRepository.save(venue);
         } catch (Exception e) {
             logger.error("Error saving venue: {}", e.getMessage());
-            throw new RuntimeException("Failed to save venue", e);
+            throw new VenueNotSavedException("Failed to save venue"+e);
         }
     }
 

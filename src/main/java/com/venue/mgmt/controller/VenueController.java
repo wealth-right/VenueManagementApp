@@ -7,17 +7,16 @@ import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.VenueService;
 import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import static com.venue.mgmt.constant.GeneralMsgConstants.TOKEN_EXPIRED;
 
 import java.util.List;
+
+import static com.venue.mgmt.constant.GeneralMsgConstants.TOKEN_EXPIRED;
 
 @RestController
 @RequestMapping("/venue-app/v1/venues")
@@ -25,11 +24,12 @@ public class VenueController {
 
     private static final Logger logger = LogManager.getLogger(VenueController.class);
 
-    @Autowired
-    private VenueService venueService;
+    private final VenueService venueService;
 
-    @Autowired
-    private HttpServletRequest request;
+
+    public VenueController(VenueService venueService) {
+        this.venueService = venueService;
+    }
 
     @PostMapping
     public ResponseEntity<Venue> createVenue(
@@ -43,7 +43,6 @@ public class VenueController {
             return ResponseEntity.status(401).build();
         }
         String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        request.setAttribute("userId", userId);
         venue.setCreatedBy(userId);
         return ResponseEntity.ok(venueService.saveVenue(venue));
     }
@@ -63,7 +62,6 @@ public class VenueController {
             return ResponseEntity.status(401).build();
         }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
-            request.setAttribute("userId", userId);
             Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(sort, page, size, userId);
             venues.forEach(venue -> {
                 venue.setLeadCount(venue.getLeads().size());
@@ -88,7 +86,7 @@ public class VenueController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Venue>> searchVenues(
+    public ResponseEntity<ApiResponse<List<Venue>>> searchVenues(
             @RequestHeader(name = "Authorization", required = true) String authHeader,
             @RequestParam(required = false) String query) throws Exception {
         boolean tokenValid = JWTValidator.validateToken(authHeader);
@@ -99,7 +97,18 @@ public class VenueController {
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
-            return ResponseEntity.ok(venueService.searchVenues(query, userId));
+            List<Venue> venues = venueService.searchVenues(query, userId);
+            venues.forEach(venue -> {
+                venue.setLeadCount(venue.getLeads().size());
+                venue.setLeadCountToday(venue.getLeadCountToday());
+            });
+            ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
+            ApiResponse<List<Venue>> response = new ApiResponse<>();
+            response.setStatusCode(responseEntity.getStatusCode().value());
+            response.setStatusMsg("Success");
+            response.setErrorMsg(null);
+            response.setResponse(venues);
+            return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
     }
