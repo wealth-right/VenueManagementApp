@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -124,7 +125,7 @@ public class LeadRegistrationController {
             @RequestParam(defaultValue = "desc") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = true) Long venueId,
+            @RequestParam(required = false) Long venueId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) throws Exception {
 
@@ -143,6 +144,13 @@ public class LeadRegistrationController {
             Date start = startDate != null ? formatter.parse(startDate) : null;
             Date end = endDate != null ? formatter.parse(endDate) : null;
 
+            // Adjust end date to include the entire day if start and end dates are the same
+            if (start != null && end != null && start.equals(end)) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(end);
+                calendar.add(Calendar.DAY_OF_MONTH, 1);
+                end = calendar.getTime();
+            }
             Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
                     (sort, page, size, userId, venueId, start, end);
             Venue venue = venueId != null ? venueRepository.findById(venueId).orElse(null) : null;
