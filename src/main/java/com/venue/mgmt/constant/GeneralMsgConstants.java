@@ -8,6 +8,10 @@ public class GeneralMsgConstants {
     public static final String SUCCESS="Success";
     public static final String OTP_SENT_SUCCESS= "OTP sent successfully";
 
+    public static final String OTP_NOT_SENT= "OTP not Sent. Please try again";
+
     public static final String OTP_VERIFIED_SUCCESS= "OTP verified successfully";
+
+    public static final String USER_ID="userId";
 
 }

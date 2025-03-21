@@ -16,7 +16,7 @@ public class CustomerRequest {
     private String mobileno;
     private String addedby;
     private String assignedto;
-    private String dob;
+//    private String dob;
     private String gender;
     private String occupation;
     private String taxStatus;

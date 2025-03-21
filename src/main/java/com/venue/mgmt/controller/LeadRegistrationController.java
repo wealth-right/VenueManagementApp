@@ -2,6 +2,7 @@ package com.venue.mgmt.controller;
 
 import com.venue.mgmt.constant.GeneralMsgConstants;
 import com.venue.mgmt.dto.LeadWithVenueDetails;
+import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
@@ -25,7 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-
+import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -65,11 +66,18 @@ public class LeadRegistrationController {
         if (tokenValid) {
             boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
             if (isTokenExpired) {
-                logger.warn(GeneralMsgConstants.TOKEN_EXPIRED);
+                logger.warn(TOKEN_EXPIRED);
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
-            request.setAttribute("userId", userId);
+            request.setAttribute(USER_ID, userId);
+
+            // Fetch user details from the API
+            CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
+            UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
+            if (userDetails == null) {
+                return ResponseEntity.status(404).body(null);
+            }
             // Create CustomerRequest object
             CustomerRequest customerRequest = new CustomerRequest();
             customerRequest.setTitle("Mr.");
@@ -82,14 +90,14 @@ public class LeadRegistrationController {
             customerRequest.setMobileno(leadRegistration.getMobileNumber());
             customerRequest.setAddedby(userId);
             customerRequest.setAssignedto(userId);
-            customerRequest.setDob(leadRegistration.getDob().toString());
+//            customerRequest.setDob(leadRegistration.getDob().toString());
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             customerRequest.setOccupation("01");
             customerRequest.setTaxStatus("01");
             customerRequest.setCountryOfResidence("India");
             customerRequest.setSource("QuickTapApp");
             customerRequest.setCustomertype("Prospect");
-            customerRequest.setChannelcode("SAFL");
+            customerRequest.setChannelcode(userDetails.getChannelcode());
 
             // Save customer data
             CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
@@ -100,7 +108,7 @@ public class LeadRegistrationController {
 
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
             response.setStatusCode(200);
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(savedLead);
             return ResponseEntity.ok(response);
@@ -179,7 +187,7 @@ public class LeadRegistrationController {
 
             ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
             response.setStatusCode(200);
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(leadWithVenueDetailsList);
 
@@ -211,7 +219,7 @@ public class LeadRegistrationController {
             ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
             ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
             response.setStatusCode(ok.getStatusCodeValue());
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(leads);
             return ResponseEntity.ok(response);

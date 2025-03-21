@@ -45,7 +45,7 @@ public class OTPService extends OtpDetailsUtils {
 
     private static final Logger logger = LogManager.getLogger(OTPService.class);
 
-    public boolean generateAndSendOTP(ValidateOtpRequest validateOtpRequest, String userId) {
+    public String generateAndSendOTP(ValidateOtpRequest validateOtpRequest, String userId) {
         Optional<OtpDetails> optionalOtpDetails;
         LocalDateTime lastCreationDate;
         logger.info("OTPService - Inside generateAndSendOTP method");
@@ -66,8 +66,9 @@ public class OTPService extends OtpDetailsUtils {
                 String.valueOf(otp)).replaceFirst("\\{#var#}",
                 String.valueOf(otpPath.getOtpExpiry() / 60000));
         message = URLDecoder.decode(message, StandardCharsets.UTF_8);
+        String messageSent=null;
         try {
-            sendSMS(validateOtpRequest.getMobileNumber(), message);
+            messageSent = sendSMS(validateOtpRequest.getMobileNumber(), message);
             otpDetails.setMobileNo(validateOtpRequest.getMobileNumber());
             otpDetails.setLeadId(validateOtpRequest.getLeadId());
             otpDetails.setOtp((String.valueOf(otp)));
@@ -77,7 +78,7 @@ public class OTPService extends OtpDetailsUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return true;
+        return messageSent;
     }
 
     public boolean validateOtp(ValidateOtpRequest validateOtpRequest) {

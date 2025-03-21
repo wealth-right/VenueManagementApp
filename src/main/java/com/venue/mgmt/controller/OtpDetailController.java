@@ -36,12 +36,13 @@ public class OtpDetailController {
             }
         }
         String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        Boolean otpSentFlag = otpService.generateAndSendOTP(validateOtpRequest, userId);
-        VerifyUserOtpResponse verifyUserOtpResponse = new VerifyUserOtpResponse();
-        verifyUserOtpResponse.setStatusCode(200);
-        verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_SENT_SUCCESS);
-        verifyUserOtpResponse.setErrorMsg(null);
-        verifyUserOtpResponse.setResponse(otpSentFlag);
+        String messageSent = otpService.generateAndSendOTP(validateOtpRequest, userId);
+        VerifyUserOtpResponse verifyUserOtpResponse;
+            verifyUserOtpResponse = new VerifyUserOtpResponse();
+            verifyUserOtpResponse.setStatusCode(200);
+            verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_SENT_SUCCESS);
+            verifyUserOtpResponse.setErrorMsg(null);
+            verifyUserOtpResponse.setResponse(!messageSent.isEmpty());
         return ResponseEntity.ok(verifyUserOtpResponse);
     }
 

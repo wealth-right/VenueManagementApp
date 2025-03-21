@@ -1,5 +1,6 @@
 package com.venue.mgmt.request;
 
+import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.exception.CustomerNotSavedException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,5 +25,11 @@ public class CustomerServiceClient {
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new CustomerNotSavedException("Failed to save customer data");
         }
+    }
+
+    public UserDetailsResponse.UserDetails getUserDetails(String userId) {
+        String url = "https://api.dev.wealth-right.com/Usermgt/api/GetUserDetails/" + userId + "/USERID";
+        UserDetailsResponse response = restTemplate.getForObject(url, UserDetailsResponse.class);
+        return response != null ? response.getResponse() : null;
     }
 }

@@ -7,6 +7,6 @@ public class VerifyUserOtpResponse {
     private int statusCode;
     private String statusMsg;
     private String errorMsg;
-    private Boolean response;
+    private boolean response;
 
 }
