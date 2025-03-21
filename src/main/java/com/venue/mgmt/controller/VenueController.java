@@ -7,6 +7,7 @@ import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.VenueService;
 import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,9 +27,12 @@ public class VenueController {
 
     private final VenueService venueService;
 
+    private HttpServletRequest request;
 
-    public VenueController(VenueService venueService) {
+
+    public VenueController(VenueService venueService,HttpServletRequest request) {
         this.venueService = venueService;
+        this.request = request;
     }
 
     @PostMapping
@@ -43,6 +47,7 @@ public class VenueController {
             return ResponseEntity.status(401).build();
         }
         String userId = JwtUtil.extractUserIdFromToken(authHeader);
+        request.setAttribute("userId", userId);
         venue.setCreatedBy(userId);
         return ResponseEntity.ok(venueService.saveVenue(venue));
     }
@@ -62,6 +67,7 @@ public class VenueController {
             return ResponseEntity.status(401).build();
         }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute("userId", userId);
             Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(sort, page, size, userId);
             venues.forEach(venue -> {
                 venue.setLeadCount(venue.getLeads().size());

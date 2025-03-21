@@ -42,7 +42,6 @@ public class VenueServiceImpl implements VenueService {
         try {
             logger.info("Saving new venue: {}", venue.getVenueName());
             venue.setIsActive(true);
-            venue.setLeads(null);
             return venueRepository.save(venue);
         } catch (Exception e) {
             logger.error("Error saving venue: {}", e.getMessage());

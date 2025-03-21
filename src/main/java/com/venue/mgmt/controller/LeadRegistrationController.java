@@ -15,6 +15,7 @@ import com.venue.mgmt.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
@@ -43,10 +44,13 @@ public class LeadRegistrationController {
 
     private final VenueRepository venueRepository;
 
+    private HttpServletRequest request;
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository) {
+
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository,HttpServletRequest request) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
+        this.request = request;
     }
 
     @PostMapping
@@ -64,7 +68,7 @@ public class LeadRegistrationController {
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
-
+            request.setAttribute("userId", userId);
             // Create CustomerRequest object
             CustomerRequest customerRequest = new CustomerRequest();
             customerRequest.setTitle("Mr.");
@@ -119,6 +123,7 @@ public class LeadRegistrationController {
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute("userId", userId);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
             Date start = startDate != null ? formatter.parse(startDate) : null;
             Date end = endDate != null ? formatter.parse(endDate) : null;
@@ -194,7 +199,7 @@ public class LeadRegistrationController {
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
-
+            request.setAttribute("userId", userId);
             List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
             ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
             ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
