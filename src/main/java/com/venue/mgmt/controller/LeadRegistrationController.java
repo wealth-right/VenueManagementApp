@@ -8,6 +8,7 @@ import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.request.CustomerRequest;
 import com.venue.mgmt.request.CustomerServiceClient;
 import com.venue.mgmt.response.ApiResponse;
+import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.util.JWTValidator;
@@ -55,7 +56,7 @@ public class LeadRegistrationController {
 
     @PostMapping
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
-    public ResponseEntity<LeadRegistration> createLead(
+    public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) throws Exception {
 
@@ -96,7 +97,13 @@ public class LeadRegistrationController {
             leadRegistration.setActive(true);
             leadRegistration.setCreatedBy(userId);
             LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
-            return ResponseEntity.ok(savedLead);
+
+            LeadResponse<LeadRegistration> response = new LeadResponse<>();
+            response.setStatusCode(200);
+            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setErrorMsg(null);
+            response.setResponse(savedLead);
+            return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
     }
@@ -172,7 +179,7 @@ public class LeadRegistrationController {
 
             ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
             response.setStatusCode(200);
-            response.setStatusMsg("Success");
+            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(leadWithVenueDetailsList);
 
@@ -204,7 +211,7 @@ public class LeadRegistrationController {
             ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
             ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
             response.setStatusCode(ok.getStatusCodeValue());
-            response.setStatusMsg("Success");
+            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(leads);
             return ResponseEntity.ok(response);

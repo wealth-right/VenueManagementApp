@@ -45,7 +45,7 @@ public class OTPService extends OtpDetailsUtils {
 
     private static final Logger logger = LogManager.getLogger(OTPService.class);
 
-    public OtpDetails generateAndSendOTP(ValidateOtpRequest validateOtpRequest, String userId) {
+    public boolean generateAndSendOTP(ValidateOtpRequest validateOtpRequest, String userId) {
         Optional<OtpDetails> optionalOtpDetails;
         LocalDateTime lastCreationDate;
         logger.info("OTPService - Inside generateAndSendOTP method");
@@ -77,7 +77,7 @@ public class OTPService extends OtpDetailsUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return otpDetails;
+        return true;
     }
 
     public boolean validateOtp(ValidateOtpRequest validateOtpRequest) {

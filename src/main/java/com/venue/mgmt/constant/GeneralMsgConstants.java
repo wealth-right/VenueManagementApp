@@ -5,4 +5,9 @@ public class GeneralMsgConstants {
 
     public static final String TOKEN_EXPIRED = "Token is expired";
 
+    public static final String SUCCESS="Success";
+    public static final String OTP_SENT_SUCCESS= "OTP sent successfully";
+
+    public static final String OTP_VERIFIED_SUCCESS= "OTP verified successfully";
+
 }

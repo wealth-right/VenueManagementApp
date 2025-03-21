@@ -1,9 +1,12 @@
 package com.venue.mgmt.controller;
 
+import com.venue.mgmt.constant.GeneralMsgConstants;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.response.ApiResponse;
+import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
+import com.venue.mgmt.response.VenueResponse;
 import com.venue.mgmt.services.VenueService;
 import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
@@ -36,7 +39,7 @@ public class VenueController {
     }
 
     @PostMapping
-    public ResponseEntity<Venue> createVenue(
+    public ResponseEntity<VenueResponse<Venue>> createVenue(
             @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody Venue venue) {
 
@@ -49,7 +52,13 @@ public class VenueController {
         String userId = JwtUtil.extractUserIdFromToken(authHeader);
         request.setAttribute("userId", userId);
         venue.setCreatedBy(userId);
-        return ResponseEntity.ok(venueService.saveVenue(venue));
+        Venue savedVenue = venueService.saveVenue(venue);
+        VenueResponse<Venue> response = new VenueResponse<>();
+        response.setStatusCode(200);
+        response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+        response.setErrorMsg(null);
+        response.setResponse(savedVenue);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
