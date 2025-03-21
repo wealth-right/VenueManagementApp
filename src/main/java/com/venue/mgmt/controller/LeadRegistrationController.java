@@ -67,7 +67,7 @@ public class LeadRegistrationController {
 
             // Create CustomerRequest object
             CustomerRequest customerRequest = new CustomerRequest();
-            customerRequest.setTitle("Miss.");
+            customerRequest.setTitle("Mr.");
             customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
             customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
             customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
