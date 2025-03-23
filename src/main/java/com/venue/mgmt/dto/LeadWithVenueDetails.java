@@ -16,6 +16,7 @@ public class LeadWithVenueDetails {
     private String mobileNumber;
     private String address;
     private String email;
+    private String pinCode;
     private boolean active;
     private boolean verified;
     private boolean eitherMobileOrEmailPresent;

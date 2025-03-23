@@ -14,4 +14,5 @@ public class GeneralMsgConstants {
 
     public static final String USER_ID="userId";
 
+    public static final String OTP_VERIFIED_FAILED = "Error occurred while sending OTP";
 }
