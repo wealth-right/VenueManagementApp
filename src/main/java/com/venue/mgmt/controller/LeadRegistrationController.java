@@ -25,7 +25,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+
 import static com.venue.mgmt.constant.GeneralMsgConstants.*;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -49,7 +51,7 @@ public class LeadRegistrationController {
     private final HttpServletRequest request;
 
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository,HttpServletRequest request) {
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
         this.request = request;
@@ -81,7 +83,7 @@ public class LeadRegistrationController {
             // Create CustomerRequest object
             CustomerRequest customerRequest = new CustomerRequest();
             customerRequest.setTitle("Mr.");
-            if((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName()!=null) {
+            if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
                 customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
                 customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
                 customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
@@ -92,7 +94,7 @@ public class LeadRegistrationController {
             customerRequest.setMobileno(leadRegistration.getMobileNumber());
             customerRequest.setAddedby(userId);
             customerRequest.setAssignedto(userId);
-            if(leadRegistration.getGender()!=null && (!leadRegistration.getGender().isEmpty())) {
+            if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
                 customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             }
             customerRequest.setOccupation("01");

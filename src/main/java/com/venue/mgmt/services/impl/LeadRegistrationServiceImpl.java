@@ -115,21 +115,27 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
 
             // Update the fields
+            existingLead.setFullName(updatedLead.getFullName());
+
             existingLead.setEmail(updatedLead.getEmail());
             existingLead.setMobileNumber(updatedLead.getMobileNumber());
             existingLead.setStatus(updatedLead.getStatus());
-            existingLead.setFullName(updatedLead.getFullName());
             existingLead.setActive(true);
             existingLead.setLastModifiedBy(updatedLead.getLastModifiedBy());
             existingLead.setLastModifiedDate(updatedLead.getLastModifiedDate());
             existingLead.setMaritalStatus(updatedLead.getMaritalStatus());
             existingLead.setAge(updatedLead.getAge());
-            existingLead.setFullName(updatedLead.getFullName());
             existingLead.setOccupation(updatedLead.getOccupation());
             existingLead.setIncomeRange(updatedLead.getIncomeRange());
             existingLead.setDob(updatedLead.getDob());
             existingLead.setGender(updatedLead.getGender());
+            existingLead.setPinCode(updatedLead.getPinCode());
             existingLead.setAddress(updatedLead.getAddress());
+            existingLead.setLineOfBusiness(updatedLead.getLineOfBusiness());
+            existingLead.setLifeStage(updatedLead.getLifeStage());
+            existingLead.setVenue(updatedLead.getVenue());
+            existingLead.setActive(updatedLead.getActive());
+            existingLead.setRemarks(updatedLead.getRemarks());
             existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
 
@@ -148,7 +154,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         try {
             LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-            
 
             leadRegRepository.delete(lead);
             logger.info("Deleted lead with ID: {}", leadId);

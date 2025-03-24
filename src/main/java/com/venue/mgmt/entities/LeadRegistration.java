@@ -109,13 +109,6 @@ public class LeadRegistration extends Auditable<String> {
         this.leadId = leadId;
     }
 
-//    public Long getVenueId() {
-//        return venueId;
-//    }
-//
-//    public void setVenueId(Long venueId) {
-//        this.venueId = venueId;
-//    }
     public String getFullName() {
         return fullName;
     }
