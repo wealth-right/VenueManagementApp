@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -47,6 +48,11 @@ public class VenueServiceImpl implements VenueService {
             logger.error("Error saving venue: {}", e.getMessage());
             throw new VenueNotSavedException("Failed to save venue"+e);
         }
+    }
+
+    @Override
+    public List<Venue> getVenuesByIds(List<Long> venueIds) {
+        return venueRepository.findAllById(venueIds);
     }
 
 

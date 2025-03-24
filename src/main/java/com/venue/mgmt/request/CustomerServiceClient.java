@@ -16,8 +16,8 @@ public class CustomerServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    public void saveCustomerData(CustomerRequest customerRequest) {
-        String url = "https://api.dev.wealth-right.com/Customer/api/SaveCustomerData";
+    public ResponseEntity<String> saveCustomerData(CustomerRequest customerRequest) {
+        String url = "https://api.dev.wealth-right.com/Customer/api/CreateAndUpdateProspect";
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
         HttpEntity<CustomerRequest> request = new HttpEntity<>(customerRequest, headers);
@@ -25,6 +25,7 @@ public class CustomerServiceClient {
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new CustomerNotSavedException("Failed to save customer data");
         }
+        return response;
     }
 
     public UserDetailsResponse.UserDetails getUserDetails(String userId) {

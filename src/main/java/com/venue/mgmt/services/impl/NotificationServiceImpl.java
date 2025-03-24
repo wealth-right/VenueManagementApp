@@ -84,7 +84,6 @@ public class NotificationServiceImpl implements INotificationService {
                 verifyRequest.getRefId(),
                 verifyRequest.getUserId()
             );
-            
             // Debug log the request
             logger.info("Request body: {}", requestBody);
             
@@ -97,10 +96,8 @@ public class NotificationServiceImpl implements INotificationService {
                     entity,
                     String.class
             );
-            
             // Log raw response
             logger.info("Raw API Response: {}", rawResponse.getBody());
-
             // Return the raw response body with original status code
             return ResponseEntity.status(rawResponse.getStatusCode())
                                .contentType(MediaType.APPLICATION_JSON)

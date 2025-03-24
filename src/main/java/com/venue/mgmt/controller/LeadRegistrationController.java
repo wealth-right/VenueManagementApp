@@ -11,6 +11,7 @@ import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
+import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,11 +52,14 @@ public class LeadRegistrationController {
 
     private final HttpServletRequest request;
 
+    private final UserMgmtResService userMgmtResService;
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request) {
+
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request, UserMgmtResService userMgmtResService) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
         this.request = request;
+        this.userMgmtResService = userMgmtResService;
     }
 
     @PostMapping
@@ -100,7 +104,6 @@ public class LeadRegistrationController {
         }
         // Create CustomerRequest object
         CustomerRequest customerRequest = new CustomerRequest();
-        customerRequest.setTitle("Mr.");
         if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
             customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
             customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
@@ -110,10 +113,20 @@ public class LeadRegistrationController {
         customerRequest.setEmailid(leadRegistration.getEmail());
         customerRequest.setCountrycode("+91");
         customerRequest.setMobileno(leadRegistration.getMobileNumber());
-        customerRequest.setAddedby(userId);
+        customerRequest.setAddedUpdatedBy(userId);
         customerRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
+            if (leadRegistration.getGender().equalsIgnoreCase("M")) {
+                customerRequest.setTitle("Mr.");
+            } else if (leadRegistration.getGender().equalsIgnoreCase("F") &&
+                    leadRegistration.getMaritalStatus() != null
+                    && (!leadRegistration.getMaritalStatus().isEmpty())
+                    && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
+                customerRequest.setTitle("Mrs.");
+            } else {
+                customerRequest.setTitle("Miss.");
+            }
         }
         customerRequest.setOccupation("01");
         customerRequest.setTaxStatus("01");
@@ -121,9 +134,12 @@ public class LeadRegistrationController {
         customerRequest.setSource("QuickTapApp");
         customerRequest.setCustomertype("Prospect");
         customerRequest.setChannelcode(userDetails.getChannelcode());
+        String branchCode = userDetails.getBranchCode();
+        userMgmtResService.getDataFromOtherSchema(branchCode);
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        customerServiceClient.saveCustomerData(customerRequest);
+        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest);
+        entity.getBody();
     }
 
 
@@ -245,16 +261,16 @@ public class LeadRegistrationController {
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
             request.setAttribute("userId", userId);
-            try{
-            List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
-            ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
-            ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
-            response.setStatusCode(ok.getStatusCodeValue());
-            response.setStatusMsg(SUCCESS);
-            response.setErrorMsg(null);
-            response.setResponse(leads);
-            return ResponseEntity.ok(response);
-            }catch (Exception e) {
+            try {
+                List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
+                ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
+                ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
+                response.setStatusCode(ok.getStatusCodeValue());
+                response.setStatusMsg(SUCCESS);
+                response.setErrorMsg(null);
+                response.setResponse(leads);
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
                 logger.error("Error searching leads: {}", e.getMessage());
                 ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());

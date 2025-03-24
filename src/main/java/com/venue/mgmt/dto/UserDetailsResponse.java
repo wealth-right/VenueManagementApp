@@ -17,6 +17,7 @@ public class UserDetailsResponse {
         private String mobileNumber;
         private String emailId;
         private String channelcode;
+        private String branchCode;
         // Add other fields as necessary
     }
 }

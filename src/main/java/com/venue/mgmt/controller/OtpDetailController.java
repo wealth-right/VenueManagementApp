@@ -32,22 +32,27 @@ public class OtpDetailController {
     public ResponseEntity<VerifyUserOtpResponse> sendOtp(@RequestHeader(name = "Authorization", required = true) String authHeader,
                                      @RequestBody @Valid ValidateOtpRequest validateOtpRequest) throws Exception {
         logger.info("VenueManagementApp - Inside send otp method with lead Id : {}", validateOtpRequest.getLeadId());
-        if(JWTValidator.validateToken(authHeader)){
-            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-            if (isTokenExpired) {
-                return ResponseEntity.status(401).build();
+        try {
+            if (JWTValidator.validateToken(authHeader)) {
+                boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+                if (isTokenExpired) {
+                    return ResponseEntity.status(401).build();
+                }
             }
-        }
-        String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        request.setAttribute(GeneralMsgConstants.USER_ID, userId);
-        String messageSent = otpService.generateAndSendOTP(validateOtpRequest, userId);
-        VerifyUserOtpResponse verifyUserOtpResponse;
+            String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute(GeneralMsgConstants.USER_ID, userId);
+            String messageSent = otpService.generateAndSendOTP(validateOtpRequest, userId);
+            VerifyUserOtpResponse verifyUserOtpResponse;
             verifyUserOtpResponse = new VerifyUserOtpResponse();
             verifyUserOtpResponse.setStatusCode(200);
             verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_SENT_SUCCESS);
             verifyUserOtpResponse.setErrorMsg(null);
             verifyUserOtpResponse.setResponse(!messageSent.isEmpty());
-        return ResponseEntity.ok(verifyUserOtpResponse);
+            return ResponseEntity.ok(verifyUserOtpResponse);
+        }
+        catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping("/validateOtp")

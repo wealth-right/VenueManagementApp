@@ -4,7 +4,6 @@ import com.venue.mgmt.constant.GeneralMsgConstants;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.response.ApiResponse;
-import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.response.VenueResponse;
 import com.venue.mgmt.services.VenueService;
@@ -41,24 +40,37 @@ public class VenueController {
     @PostMapping
     public ResponseEntity<VenueResponse<Venue>> createVenue(
             @RequestHeader(name = "Authorization") String authHeader,
-            @Valid @RequestBody Venue venue) {
+            @Valid @RequestBody Venue venue) throws Exception {
 
         logger.info("VenueManagementApp - Inside create Venue Method");
-        boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-        if (isTokenExpired) {
-            logger.warn(TOKEN_EXPIRED);
-            return ResponseEntity.status(401).build();
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if(tokenValid) {
+            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+            if (isTokenExpired) {
+                logger.warn(TOKEN_EXPIRED);
+                return ResponseEntity.status(401).build();
+            }
+            String userId = JwtUtil.extractUserIdFromToken(authHeader);
+            request.setAttribute("userId", userId);
+            try {
+                venue.setCreatedBy(userId);
+                Venue savedVenue = venueService.saveVenue(venue);
+                VenueResponse<Venue> response = new VenueResponse<>();
+                response.setStatusCode(200);
+                response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+                response.setErrorMsg(null);
+                response.setResponse(savedVenue);
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                VenueResponse<Venue> response = new VenueResponse<>();
+                response.setStatusCode(500);
+                response.setStatusMsg("Error while saving the venue");
+                response.setErrorMsg(e.getMessage());
+                response.setResponse(null);
+                return ResponseEntity.ok(response);
+            }
         }
-        String userId = JwtUtil.extractUserIdFromToken(authHeader);
-        request.setAttribute("userId", userId);
-        venue.setCreatedBy(userId);
-        Venue savedVenue = venueService.saveVenue(venue);
-        VenueResponse<Venue> response = new VenueResponse<>();
-        response.setStatusCode(200);
-        response.setStatusMsg(GeneralMsgConstants.SUCCESS);
-        response.setErrorMsg(null);
-        response.setResponse(savedVenue);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(401).build();
     }
 
     @GetMapping
@@ -112,21 +124,66 @@ public class VenueController {
                 return ResponseEntity.status(401).build();
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
-            List<Venue> venues = venueService.searchVenues(query, userId);
-            venues.forEach(venue -> {
-                venue.setLeadCount(venue.getLeads().size());
-                venue.setLeadCountToday(venue.getLeadCountToday());
-            });
-            ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
-            ApiResponse<List<Venue>> response = new ApiResponse<>();
-            response.setStatusCode(responseEntity.getStatusCode().value());
-            response.setStatusMsg("Success");
-            response.setErrorMsg(null);
-            response.setResponse(venues);
-            return ResponseEntity.ok(response);
+            try {
+                List<Venue> venues = venueService.searchVenues(query, userId);
+                venues.forEach(venue -> {
+                    venue.setLeadCount(venue.getLeads().size());
+                    venue.setLeadCountToday(venue.getLeadCountToday());
+                });
+                ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
+                ApiResponse<List<Venue>> response = new ApiResponse<>();
+                response.setStatusCode(responseEntity.getStatusCode().value());
+                response.setStatusMsg("Success");
+                response.setErrorMsg(null);
+                response.setResponse(venues);
+                return ResponseEntity.ok(response);
+            }catch (Exception e){
+                ApiResponse<List<Venue>> response = new ApiResponse<>();
+                response.setStatusCode(500);
+                response.setStatusMsg("Failed");
+                response.setErrorMsg(e.getMessage());
+                response.setResponse(null);
+                return ResponseEntity.ok(response);
+            }
         }
         return ResponseEntity.status(401).build();
     }
+
+    @GetMapping("/details")
+    public ResponseEntity<ApiResponse<List<Venue>>> getVenueDetailsByIds(
+            @RequestHeader(name = "Authorization", required = true) String authHeader,
+            @RequestParam(name = "venueIds") List<Long> venueIds) throws Exception {
+        boolean tokenValid = JWTValidator.validateToken(authHeader);
+        if (tokenValid) {
+            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
+            if (isTokenExpired) {
+                logger.warn(TOKEN_EXPIRED);
+                return ResponseEntity.status(401).build();
+            }
+            try {
+                List<Venue> venues = venueService.getVenuesByIds(venueIds);
+                venues.forEach(venue -> {
+                    venue.setLeadCount(venue.getLeads().size());
+                    venue.setLeadCountToday(venue.getLeadCountToday());
+                });
+                ApiResponse<List<Venue>> response = new ApiResponse<>();
+                response.setStatusCode(200);
+                response.setStatusMsg("Success");
+                response.setErrorMsg(null);
+                response.setResponse(venues);
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                ApiResponse<List<Venue>> response = new ApiResponse<>();
+                response.setStatusCode(500);
+                response.setStatusMsg("Failed");
+                response.setErrorMsg(e.getMessage());
+                response.setResponse(null);
+                return ResponseEntity.ok(response);
+            }
+        }
+        return ResponseEntity.status(401).build();
+    }
+
 
 
     @PostMapping("/leads")

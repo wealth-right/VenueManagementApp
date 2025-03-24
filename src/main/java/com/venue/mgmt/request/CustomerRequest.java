@@ -14,9 +14,8 @@ public class CustomerRequest {
     private String emailid;
     private String countrycode;
     private String mobileno;
-    private String addedby;
+    private String addedUpdatedBy;
     private String assignedto;
-//    private String dob;
     private String gender;
     private String occupation;
     private String taxStatus;

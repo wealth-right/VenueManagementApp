@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface VenueService {
     Venue saveVenue(Venue venue);
+
+    List<Venue> getVenuesByIds(List<Long> venueIds);
     Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId);
     //sort by nearest as well by passing the longitude and latitude
     List<Venue> searchVenues(String searchTerm, String userId);
