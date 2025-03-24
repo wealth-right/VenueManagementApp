@@ -74,39 +74,8 @@ public class LeadRegistrationController {
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
             request.setAttribute(USER_ID, userId);
 
-            // Fetch user details from the API
-            CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
-            UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
-            if (userDetails == null) {
-                return ResponseEntity.status(404).body(null);
-            }
             // Create CustomerRequest object
-            CustomerRequest customerRequest = new CustomerRequest();
-            customerRequest.setTitle("Mr.");
-            if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
-                customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
-                customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
-                customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
-            }
-            customerRequest.setFullname(leadRegistration.getFullName());
-            customerRequest.setEmailid(leadRegistration.getEmail());
-            customerRequest.setCountrycode("+91");
-            customerRequest.setMobileno(leadRegistration.getMobileNumber());
-            customerRequest.setAddedby(userId);
-            customerRequest.setAssignedto(userId);
-            if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
-                customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
-            }
-            customerRequest.setOccupation("01");
-            customerRequest.setTaxStatus("01");
-            customerRequest.setCountryOfResidence("India");
-            customerRequest.setSource("QuickTapApp");
-            customerRequest.setCustomertype("Prospect");
-            customerRequest.setChannelcode(userDetails.getChannelcode());
-
-            // Save customer data
-            CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-            customerServiceClient.saveCustomerData(customerRequest);
+            persistCustomerDetails(userId, leadRegistration);
             leadRegistration.setActive(true);
             leadRegistration.setCreatedBy(userId);
             LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
@@ -119,6 +88,41 @@ public class LeadRegistrationController {
             return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
+    }
+
+    private void persistCustomerDetails(String userId, LeadRegistration leadRegistration) {
+        // Fetch user details from the API
+        CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
+        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
+        if (userDetails == null) {
+            return;
+        }
+        // Create CustomerRequest object
+        CustomerRequest customerRequest = new CustomerRequest();
+        customerRequest.setTitle("Mr.");
+        if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
+            customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
+            customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
+            customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
+        }
+        customerRequest.setFullname(leadRegistration.getFullName());
+        customerRequest.setEmailid(leadRegistration.getEmail());
+        customerRequest.setCountrycode("+91");
+        customerRequest.setMobileno(leadRegistration.getMobileNumber());
+        customerRequest.setAddedby(userId);
+        customerRequest.setAssignedto(userId);
+        if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
+            customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
+        }
+        customerRequest.setOccupation("01");
+        customerRequest.setTaxStatus("01");
+        customerRequest.setCountryOfResidence("India");
+        customerRequest.setSource("QuickTapApp");
+        customerRequest.setCustomertype("Prospect");
+        customerRequest.setChannelcode(userDetails.getChannelcode());
+        // Save customer data
+        CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
+        customerServiceClient.saveCustomerData(customerRequest);
     }
 
 
