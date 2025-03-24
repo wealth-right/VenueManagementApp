@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -148,75 +149,85 @@ public class LeadRegistrationController {
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
             request.setAttribute("userId", userId);
+//            cast the startDate & endDate into java.util Date
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
             Date start = startDate != null ? formatter.parse(startDate) : null;
             Date end = endDate != null ? formatter.parse(endDate) : null;
+            try {
+                // Adjust end date to include the entire day if start and end dates are the same
+                if (start != null && end != null && start.equals(end)) {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(end);
+                    calendar.add(Calendar.DAY_OF_MONTH, 1);
+                    end = calendar.getTime();
+                }
+                Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
+                        (sort, page, size, userId, venueId, start, end);
 
-            // Adjust end date to include the entire day if start and end dates are the same
-            if (start != null && end != null && start.equals(end)) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(end);
-                calendar.add(Calendar.DAY_OF_MONTH, 1);
-                end = calendar.getTime();
+                List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
+                        .map(lead -> {
+                            LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
+                            leadWithVenueDetails.setLeadId(lead.getLeadId());
+                            leadWithVenueDetails.setFullName(lead.getFullName());
+                            leadWithVenueDetails.setAge(lead.getAge());
+                            leadWithVenueDetails.setOccupation(lead.getOccupation());
+                            leadWithVenueDetails.setMobileNumber(lead.getMobileNumber());
+                            leadWithVenueDetails.setAddress(lead.getAddress());
+                            leadWithVenueDetails.setEmail(lead.getEmail());
+                            leadWithVenueDetails.setPinCode(lead.getPinCode());
+                            leadWithVenueDetails.setActive(lead.getActive());
+                            leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
+                            leadWithVenueDetails.setVerified(lead.getVerified());
+                            leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
+                            leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
+                            leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
+                            leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
+                            leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
+                            leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
+                            leadWithVenueDetails.setLifeStage(lead.getLifeStage());
+                            leadWithVenueDetails.setGender(lead.getGender());
+                            leadWithVenueDetails.setRemarks(lead.getRemarks());
+                            leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
+                            leadWithVenueDetails.setDeleted(lead.getDeleted());
+                            leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
+                            // Fetch venue details for each lead
+                            Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
+                            if (leadVenue != null) {
+                                LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
+                                venueDetails.setVenueId(leadVenue.getVenueId());
+                                venueDetails.setVenueName(leadVenue.getVenueName());
+                                venueDetails.setLatitude(leadVenue.getLatitude());
+                                venueDetails.setLongitude(leadVenue.getLongitude());
+                                venueDetails.setActive(leadVenue.getIsActive());
+                                venueDetails.setAddress(leadVenue.getAddress());
+                                leadWithVenueDetails.setVenueDetails(venueDetails);
+                            }
+                            return leadWithVenueDetails;
+                        })
+                        .toList();
+
+                ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
+                response.setStatusCode(200);
+                response.setStatusMsg(SUCCESS);
+                response.setErrorMsg(null);
+                response.setResponse(leadWithVenueDetailsList);
+
+                PaginationDetails paginationDetails = new PaginationDetails();
+                paginationDetails.setCurrentPage(leads.getNumber());
+                paginationDetails.setTotalRecords(leads.getTotalElements());
+                paginationDetails.setTotalPages(leads.getTotalPages());
+                response.setPagination(paginationDetails);
+
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                logger.error("Error getting all leads: {}", e.getMessage());
+                ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                response.setErrorMsg(e.getMessage());
+                response.setResponse(null);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
-            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
-                    (sort, page, size, userId, venueId, start, end);
-
-            List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
-                    .map(lead -> {
-                        LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
-                        leadWithVenueDetails.setLeadId(lead.getLeadId());
-                        leadWithVenueDetails.setFullName(lead.getFullName());
-                        leadWithVenueDetails.setAge(lead.getAge());
-                        leadWithVenueDetails.setOccupation(lead.getOccupation());
-                        leadWithVenueDetails.setMobileNumber(lead.getMobileNumber());
-                        leadWithVenueDetails.setAddress(lead.getAddress());
-                        leadWithVenueDetails.setEmail(lead.getEmail());
-                        leadWithVenueDetails.setPinCode(lead.getPinCode());
-                        leadWithVenueDetails.setActive(lead.getActive());
-                        leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
-                        leadWithVenueDetails.setVerified(lead.getVerified());
-                        leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
-                        leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
-                        leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
-                        leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
-                        leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
-                        leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
-                        leadWithVenueDetails.setLifeStage(lead.getLifeStage());
-                        leadWithVenueDetails.setGender(lead.getGender());
-                        leadWithVenueDetails.setRemarks(lead.getRemarks());
-                        leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
-                        leadWithVenueDetails.setDeleted(lead.getDeleted());
-                        leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
-                        // Fetch venue details for each lead
-                        Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
-                        if (leadVenue != null) {
-                            LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
-                            venueDetails.setVenueId(leadVenue.getVenueId());
-                            venueDetails.setVenueName(leadVenue.getVenueName());
-                            venueDetails.setLatitude(leadVenue.getLatitude());
-                            venueDetails.setLongitude(leadVenue.getLongitude());
-                            venueDetails.setActive(leadVenue.getIsActive());
-                            venueDetails.setAddress(leadVenue.getAddress());
-                            leadWithVenueDetails.setVenueDetails(venueDetails);
-                        }
-                        return leadWithVenueDetails;
-                    })
-                    .toList();
-
-            ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
-            response.setStatusCode(200);
-            response.setStatusMsg(SUCCESS);
-            response.setErrorMsg(null);
-            response.setResponse(leadWithVenueDetailsList);
-
-            PaginationDetails paginationDetails = new PaginationDetails();
-            paginationDetails.setCurrentPage(leads.getNumber());
-            paginationDetails.setTotalRecords(leads.getTotalElements());
-            paginationDetails.setTotalPages(leads.getTotalPages());
-            response.setPagination(paginationDetails);
-
-            return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).build();
     }
@@ -234,6 +245,7 @@ public class LeadRegistrationController {
             }
             String userId = JwtUtil.extractUserIdFromToken(authHeader);
             request.setAttribute("userId", userId);
+            try{
             List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
             ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
             ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
@@ -242,13 +254,22 @@ public class LeadRegistrationController {
             response.setErrorMsg(null);
             response.setResponse(leads);
             return ResponseEntity.ok(response);
+            }catch (Exception e) {
+                logger.error("Error searching leads: {}", e.getMessage());
+                ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                response.setErrorMsg(e.getMessage());
+                response.setResponse(null);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
         }
         return ResponseEntity.status(401).build();
     }
 
     @PutMapping("/{leadId}")
     @Operation(summary = "Update a lead", description = "Updates an existing lead with the provided details")
-    public ResponseEntity<LeadRegistration> updateLead(
+    public ResponseEntity<LeadResponse<LeadRegistration>> updateLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @PathVariable Long leadId,
             @Valid @RequestBody LeadRegistration leadRegistration) throws Exception {
@@ -263,10 +284,20 @@ public class LeadRegistrationController {
 
             try {
                 LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration);
-                return ResponseEntity.ok(updatedLead);
+                LeadResponse<LeadRegistration> response = new LeadResponse<>();
+                response.setStatusCode(200);
+                response.setStatusMsg(SUCCESS);
+                response.setErrorMsg(null);
+                response.setResponse(updatedLead);
+                return ResponseEntity.ok(response);
             } catch (RuntimeException e) {
                 logger.error("Error updating lead: {}", e.getMessage());
-                return ResponseEntity.notFound().build();
+                LeadResponse<LeadRegistration> response = new LeadResponse<>();
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                response.setErrorMsg(e.getMessage());
+                response.setResponse(null);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
         }
         return ResponseEntity.status(401).build();

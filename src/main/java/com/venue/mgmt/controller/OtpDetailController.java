@@ -1,7 +1,6 @@
 package com.venue.mgmt.controller;
 
 import com.venue.mgmt.constant.GeneralMsgConstants;
-import com.venue.mgmt.entities.OtpDetails;
 import com.venue.mgmt.request.ValidateOtpRequest;
 import com.venue.mgmt.response.VerifyUserOtpResponse;
 import com.venue.mgmt.services.OTPService;
