@@ -229,7 +229,7 @@ public class LeadRegistrationController {
         }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<LeadRegistration>>> searchLeads(
+    public ResponseEntity<ApiResponse<List<LeadWithVenueDetails>>> searchLeads(
             @RequestHeader(name = "Authorization", required = true) String authHeader,
             @RequestParam(required = false) String query) throws Exception {
         logger.info("VenueManagementApp - Inside search Leads Method with query: {}", query);
@@ -243,16 +243,55 @@ public class LeadRegistrationController {
             request.setAttribute("userId", userId);
             try {
                 List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
-                ResponseEntity<List<LeadRegistration>> ok = ResponseEntity.ok(leads);
-                ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
-                response.setStatusCode(ok.getStatusCodeValue());
+                List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
+                        .map(lead -> {
+                            LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
+                            leadWithVenueDetails.setLeadId(lead.getLeadId());
+                            leadWithVenueDetails.setFullName(lead.getFullName());
+                            leadWithVenueDetails.setAge(lead.getAge());
+                            leadWithVenueDetails.setOccupation(lead.getOccupation());
+                            leadWithVenueDetails.setMobileNumber(lead.getMobileNumber());
+                            leadWithVenueDetails.setAddress(lead.getAddress());
+                            leadWithVenueDetails.setEmail(lead.getEmail());
+                            leadWithVenueDetails.setPinCode(lead.getPinCode());
+                            leadWithVenueDetails.setActive(lead.getActive());
+                            leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
+                            leadWithVenueDetails.setVerified(lead.getVerified());
+                            leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
+                            leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
+                            leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
+                            leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
+                            leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
+                            leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
+                            leadWithVenueDetails.setLifeStage(lead.getLifeStage());
+                            leadWithVenueDetails.setGender(lead.getGender());
+                            leadWithVenueDetails.setRemarks(lead.getRemarks());
+                            leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
+                            leadWithVenueDetails.setDeleted(lead.getDeleted());
+                            leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
+                            Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
+                            if (leadVenue != null) {
+                                LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
+                                venueDetails.setVenueId(leadVenue.getVenueId());
+                                venueDetails.setVenueName(leadVenue.getVenueName());
+                                venueDetails.setLatitude(leadVenue.getLatitude());
+                                venueDetails.setLongitude(leadVenue.getLongitude());
+                                venueDetails.setActive(leadVenue.getIsActive());
+                                venueDetails.setAddress(leadVenue.getAddress());
+                                leadWithVenueDetails.setVenueDetails(venueDetails);
+                            }
+                            return leadWithVenueDetails;
+                        })
+                        .toList();
+                ApiResponse<List<LeadWithVenueDetails>> response = new ApiResponse<>();
+                response.setStatusCode(200);
                 response.setStatusMsg(SUCCESS);
                 response.setErrorMsg(null);
-                response.setResponse(leads);
+                response.setResponse(leadWithVenueDetailsList);
                 return ResponseEntity.ok(response);
             } catch (Exception e) {
                 logger.error("Error searching leads: {}", e.getMessage());
-                ApiResponse<List<LeadRegistration>> response = new ApiResponse<>();
+                ApiResponse<List<LeadWithVenueDetails>> response = new ApiResponse<>();
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
                 response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
                 response.setErrorMsg(e.getMessage());

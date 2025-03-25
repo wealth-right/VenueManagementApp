@@ -8,7 +8,6 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 
 @Data
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "otp_details", schema = "leadmgmt")
 public class OtpDetails extends Auditable<String> {

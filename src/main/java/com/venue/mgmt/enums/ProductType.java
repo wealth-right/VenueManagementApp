@@ -6,6 +6,10 @@ public enum ProductType {
     TERM_INSURANCE("Term Insurance"),
     LOANS("Loans");
 
+//    ProductType() {
+//        this.displayName = this.name();
+//    }
+
 
 
     private final String displayName;

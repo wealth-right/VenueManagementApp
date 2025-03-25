@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @DynamicUpdate
 @Table(name = "lead_registration", schema = "leadmgmt")
