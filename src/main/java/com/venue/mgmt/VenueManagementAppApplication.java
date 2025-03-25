@@ -49,6 +49,7 @@ public class VenueManagementAppApplication {
         FilterRegistrationBean<JwtAuthenticationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new JwtAuthenticationFilter());
         registrationBean.addUrlPatterns("/venue-app/v1/*"); // Adjust the URL patterns as needed
+        registrationBean.addInitParameter("excludedUrls", "/api/venue-app/v1/auth/sendOtp,/api/venue-app/v1/auth/verify-otp"); // Add this line
         return registrationBean;
     }
 }

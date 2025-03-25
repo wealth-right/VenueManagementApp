@@ -115,8 +115,10 @@ public class NotificationServiceImpl implements INotificationService {
             String branchCode = (String) userMaster.get("branchcode");
 
             // Get branch details from other schema
-            Map<String, Object> branchDetails = userMgmtResService.getDataFromOtherSchema(branchCode).get(0);
-
+            Map<String, Object> branchDetails=null;
+            if(branchCode!=null) {
+                branchDetails = userMgmtResService.getDataFromOtherSchema(branchCode).get(0);
+            }
             // Add branch details to the response
             userMaster.put("branchDetails", branchDetails);
 

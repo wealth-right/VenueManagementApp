@@ -7,16 +7,32 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.stereotype.Component;
-
+import org.springframework.util.StringUtils;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
-@Component
 public class JwtAuthenticationFilter extends HttpFilter {
+
+    private List<String> excludedUrls;
+
+    @Override
+    public void init() throws ServletException {
+        String excludedUrlsParam = getFilterConfig().getInitParameter("excludedUrls");
+        if (StringUtils.hasText(excludedUrlsParam)) {
+            excludedUrls = Arrays.asList(excludedUrlsParam.split(","));
+        }
+    }
 
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+        String requestUri = request.getRequestURI();
+        if (excludedUrls != null && excludedUrls.stream().anyMatch(requestUri::startsWith)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         try {
