@@ -68,7 +68,9 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     }
 
     @Override
-    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page, int size, String userId, Long venueId, Date startDate, Date endDate) {
+    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page,
+                                                                                                    int size, String userId, Long venueId,
+                                                                                                    Date startDate, Date endDate) {
         try {
             Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                     Sort.Direction.DESC : Sort.Direction.ASC;

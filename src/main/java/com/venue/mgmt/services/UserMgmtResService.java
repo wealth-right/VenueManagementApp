@@ -18,7 +18,7 @@ public class UserMgmtResService {
     public  List<Map<String, Object>> getDataFromOtherSchema(String branchcode) {
         String sql = "select branch_name,branchcode " +
                 "from usermgmt.usermaster u,usermgmt.branch_master b\n" +
-                "where u.branchcode=b.branch_code and u.branchcode = ?";
+                "where u.branchcode=b.branch_code and u.branchcode = ? limit 1";
         return jdbcTemplate.queryForList(sql,branchcode);
     }
 

@@ -1,7 +1,9 @@
 package com.venue.mgmt;
 
+import com.venue.mgmt.filter.JwtAuthenticationFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -40,5 +42,13 @@ public class VenueManagementAppApplication {
             }
             return Optional.of("system"); // Default value if no user found
         };
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthFilterRegistration() {
+        FilterRegistrationBean<JwtAuthenticationFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new JwtAuthenticationFilter());
+        registrationBean.addUrlPatterns("/venue-app/v1/*"); // Adjust the URL patterns as needed
+        return registrationBean;
     }
 }

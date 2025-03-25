@@ -23,6 +23,7 @@ public class CustomerRequest {
     private String source;
     private String customertype;
     private String channelcode;
+    private String branchCode;
 
     // Getters and setters
 }

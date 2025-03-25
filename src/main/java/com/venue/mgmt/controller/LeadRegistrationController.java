@@ -23,6 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -65,20 +69,9 @@ public class LeadRegistrationController {
     @PostMapping
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
-            @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) throws Exception {
 
-        logger.info("VenueManagementApp - Inside create Lead Method");
-        boolean tokenValid = JWTValidator.validateToken(authHeader);
-        if (tokenValid) {
-            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-            if (isTokenExpired) {
-                logger.warn(TOKEN_EXPIRED);
-                return ResponseEntity.status(401).build();
-            }
-            String userId = JwtUtil.extractUserIdFromToken(authHeader);
-            request.setAttribute(USER_ID, userId);
-
+            String userId=request.getAttribute("userId").toString();
             // Create CustomerRequest object
             persistCustomerDetails(userId, leadRegistration);
             leadRegistration.setActive(true);
@@ -92,8 +85,6 @@ public class LeadRegistrationController {
             response.setResponse(savedLead);
             return ResponseEntity.ok(response);
         }
-        return ResponseEntity.status(401).build();
-    }
 
     private void persistCustomerDetails(String userId, LeadRegistration leadRegistration) {
         // Fetch user details from the API
@@ -135,6 +126,7 @@ public class LeadRegistrationController {
         customerRequest.setCustomertype("Prospect");
         customerRequest.setChannelcode(userDetails.getChannelcode());
         String branchCode = userDetails.getBranchCode();
+        customerRequest.setBranchCode(userDetails.getBranchCode());
         userMgmtResService.getDataFromOtherSchema(branchCode);
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
@@ -146,31 +138,22 @@ public class LeadRegistrationController {
     @GetMapping
     @Operation(summary = "Get all leads", description = "Retrieves all leads with pagination support")
     public ResponseEntity<ApiResponse<Page<LeadWithVenueDetails>>> getAllLeads(
-            @RequestHeader(name = "Authorization") String authHeader,
-            @RequestParam(defaultValue = "desc") String sort,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable,
             @RequestParam(required = false) Long venueId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) throws Exception {
 
+        logger.info("VenueManagementApp - Inside get All Leads Method with pageable: {}", pageable);
 
-        logger.info("VenueManagementApp - Inside get All Leads Method with sort: {}, page: {}, size: {}", sort, page, size);
+        String userId = (String) request.getAttribute("userId");
 
-        boolean tokenValid = JWTValidator.validateToken(authHeader);
-        if (tokenValid) {
-            boolean isTokenExpired = JwtUtil.checkIfAuthTokenExpired(authHeader);
-            if (isTokenExpired) {
-                return ResponseEntity.status(401).build();
-            }
-            String userId = JwtUtil.extractUserIdFromToken(authHeader);
-            request.setAttribute("userId", userId);
-//            cast the startDate & endDate into java.util Date
+            // Adjust page number to start from 1
+            pageable = PageRequest.of(pageable.getPageNumber()-1 , pageable.getPageSize(), pageable.getSort());
+
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
             Date start = startDate != null ? formatter.parse(startDate) : null;
             Date end = endDate != null ? formatter.parse(endDate) : null;
             try {
-                // Adjust end date to include the entire day if start and end dates are the same
                 if (start != null && end != null && start.equals(end)) {
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTime(end);
@@ -178,7 +161,7 @@ public class LeadRegistrationController {
                     end = calendar.getTime();
                 }
                 Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
-                        (sort, page, size, userId, venueId, start, end);
+                        (pageable.getSort().toString(), pageable.getPageNumber(), pageable.getPageSize(), userId, venueId, start, end);
 
                 List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
                         .map(lead -> {
@@ -206,7 +189,6 @@ public class LeadRegistrationController {
                             leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
                             leadWithVenueDetails.setDeleted(lead.getDeleted());
                             leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
-                            // Fetch venue details for each lead
                             Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
                             if (leadVenue != null) {
                                 LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
@@ -229,7 +211,7 @@ public class LeadRegistrationController {
                 response.setResponse(leadWithVenueDetailsList);
 
                 PaginationDetails paginationDetails = new PaginationDetails();
-                paginationDetails.setCurrentPage(leads.getNumber());
+                paginationDetails.setCurrentPage(leads.getNumber()+1);
                 paginationDetails.setTotalRecords(leads.getTotalElements());
                 paginationDetails.setTotalPages(leads.getTotalPages());
                 response.setPagination(paginationDetails);
@@ -245,8 +227,6 @@ public class LeadRegistrationController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
         }
-        return ResponseEntity.status(401).build();
-    }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<LeadRegistration>>> searchLeads(

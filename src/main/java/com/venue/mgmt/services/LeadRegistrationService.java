@@ -13,7 +13,9 @@ public interface LeadRegistrationService {
     LeadRegistration saveLead(LeadRegistration leadRegistration);
     Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedBy(String sortDirection, int page, int size, String userId);
 
-    Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page, int size, String userId, Long venueId, Date startDate, Date endDate);
+    Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection,
+                                                                                             int page, int size, String userId,
+                                                                                             Long venueId, Date startDate, Date endDate);
     List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId);
     LeadRegistration updateLead(Long leadId, LeadRegistration leadRegistration);
     void deleteLead(Long leadId);
