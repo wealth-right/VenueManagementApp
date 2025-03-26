@@ -40,7 +40,6 @@ public class VenueController {
 
     @PostMapping
     public ResponseEntity<VenueResponse<Venue>> createVenue(
-            @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody Venue venue) {
 
         String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
@@ -65,14 +64,14 @@ public class VenueController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Venue>>> getAllVenues(
-            @RequestHeader(name = "Authorization") String authHeader,
             @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
         logger.info("VenueManagementApp - Inside get All Venues Method");
         try {
             String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
             pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
 
-            Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(pageable.getSort().toString(), pageable.getPageNumber(), pageable.getPageSize(), userId);
+            Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(pageable.getSort().toString(),
+                    pageable.getPageNumber(), pageable.getPageSize(), userId);
             venues.forEach(venue -> {
                 venue.setLeadCount(venue.getLeads().size());
                 venue.setLeadCountToday(venue.getLeadCountToday());
@@ -83,13 +82,11 @@ public class VenueController {
             response.setStatusMsg(GeneralMsgConstants.SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(venues.getContent());
-
             PaginationDetails paginationDetails = new PaginationDetails();
             paginationDetails.setCurrentPage(venues.getNumber() + 1);
             paginationDetails.setTotalRecords(venues.getTotalElements());
             paginationDetails.setTotalPages(venues.getTotalPages());
             response.setPagination(paginationDetails);
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             ApiResponse<Page<Venue>> response = new ApiResponse<>();
@@ -103,7 +100,6 @@ public class VenueController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Venue>>> searchVenues(
-            @RequestHeader(name = "Authorization", required = true) String authHeader,
             @RequestParam(required = false) String query) {
         String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
         try {
@@ -131,7 +127,6 @@ public class VenueController {
 
     @GetMapping("/details")
     public ResponseEntity<ApiResponse<List<Venue>>> getVenueDetailsByIds(
-            @RequestHeader(name = "Authorization", required = true) String authHeader,
             @RequestParam(name = "venueIds") List<Long> venueIds) {
 
         try {
@@ -159,7 +154,6 @@ public class VenueController {
 
     @PostMapping("/leads")
     public ResponseEntity<Venue> addLeadToVenue(
-            @RequestHeader(name = "Authorization") String authHeader,
             @RequestBody LeadRegistration leadRegistration) {
         return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration));
     }
@@ -167,7 +161,6 @@ public class VenueController {
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(
-            @RequestHeader(name = "Authorization") String authHeader,
             @RequestParam(defaultValue = "creationDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection,
             @RequestParam(required = false) Double latitude,
