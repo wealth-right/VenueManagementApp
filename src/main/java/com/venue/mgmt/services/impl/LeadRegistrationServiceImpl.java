@@ -1,11 +1,16 @@
 package com.venue.mgmt.services.impl;
 
+import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
+import com.venue.mgmt.request.CustomerRequest;
+import com.venue.mgmt.request.CustomerServiceClient;
 import com.venue.mgmt.services.LeadRegistrationService;
+import com.venue.mgmt.services.UserMgmtResService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,11 +18,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
+import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 
 @Service
 @Slf4j
@@ -28,10 +38,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final LeadRegRepository leadRegRepository;
 
     private final VenueRepository venueRepository;
+    
+    private final UserMgmtResService userMgmtResService;
 
-    public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository) {
+
+    private final HttpServletRequest request;
+
+    public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository,UserMgmtResService userMgmtResService,HttpServletRequest request) {
         this.leadRegRepository = leadRegRepository;
         this.venueRepository = venueRepository;
+        this.userMgmtResService = userMgmtResService;
+        this.request = request;
 
     }
 
@@ -115,10 +132,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         try {
             LeadRegistration existingLead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-
+            String userId = request.getAttribute(USER_ID).toString();
+            persistCustomerDetails(userId,existingLead.getCustomerId(), updatedLead);
             // Update the fields
             existingLead.setFullName(updatedLead.getFullName());
-
             existingLead.setEmail(updatedLead.getEmail());
             existingLead.setMobileNumber(updatedLead.getMobileNumber());
             existingLead.setStatus(updatedLead.getStatus());
@@ -148,6 +165,56 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             logger.error("Error while updating lead: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    private void persistCustomerDetails(String userId, String customerId,
+                                        LeadRegistration leadRegistration) {
+        // Fetch user details from the API
+        CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
+        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
+        if (userDetails == null) {
+            return;
+        }
+        CustomerRequest customerRequest = userMgmtResService.getCustomerDetails(customerId);
+        if (customerRequest == null) {
+            logger.error("Customer not found with ID: {}", customerId);
+            return;
+        }
+        // Create CustomerRequest object
+        if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
+            customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
+            customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
+            customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
+        }
+        customerRequest.setFullname(leadRegistration.getFullName());
+        customerRequest.setEmailid(leadRegistration.getEmail());
+        customerRequest.setCountrycode("+91");
+        customerRequest.setMobileno(leadRegistration.getMobileNumber());
+        customerRequest.setAddedUpdatedBy(userId);
+        customerRequest.setAssignedto(userId);
+        if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
+            customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
+            if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
+                customerRequest.setTitle("Mr.");
+            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") &&
+                    leadRegistration.getMaritalStatus() != null
+                    && (!leadRegistration.getMaritalStatus().isEmpty())
+                    && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
+                customerRequest.setTitle("Mrs.");
+            } else {
+                customerRequest.setTitle("Miss.");
+            }
+        }
+        customerRequest.setOccupation("01");
+        customerRequest.setTaxStatus("01");
+        customerRequest.setCountryOfResidence("India");
+        customerRequest.setSource("QuickTapApp");
+        customerRequest.setCustomertype("Prospect");
+        customerRequest.setChannelcode(userDetails.getChannelcode());
+        customerRequest.setBranchCode(userDetails.getBranchCode());
+        // Save customer data
+        CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
+        customerServiceClient.saveCustomerData(customerRequest);
     }
 
     @Override

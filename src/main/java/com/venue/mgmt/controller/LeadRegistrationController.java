@@ -12,6 +12,7 @@ import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
+import com.venue.mgmt.util.CommonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,28 +70,39 @@ public class LeadRegistrationController {
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
             @Valid @RequestBody LeadRegistration leadRegistration) {
+        try {
+            String userId = request.getAttribute(USER_ID).toString();
+            // Create CustomerRequest object
+            String customerDetails = persistCustomerDetails(userId, leadRegistration);
+            String customerId = CommonUtils.extractCustomerId(customerDetails);
+            leadRegistration.setActive(true);
+            leadRegistration.setCustomerId(customerId);
+            leadRegistration.setCreatedBy(userId);
+            LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
 
-        String userId = request.getAttribute(USER_ID).toString();
-        // Create CustomerRequest object
-        persistCustomerDetails(userId, leadRegistration);
-        leadRegistration.setActive(true);
-        leadRegistration.setCreatedBy(userId);
-        LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
-
-        LeadResponse<LeadRegistration> response = new LeadResponse<>();
-        response.setStatusCode(200);
-        response.setStatusMsg(SUCCESS);
-        response.setErrorMsg(null);
-        response.setResponse(savedLead);
-        return ResponseEntity.ok(response);
+            LeadResponse<LeadRegistration> response = new LeadResponse<>();
+            response.setStatusCode(200);
+            response.setStatusMsg(SUCCESS);
+            response.setErrorMsg(null);
+            response.setResponse(savedLead);
+            return ResponseEntity.ok(response);
+        }catch (Exception e) {
+            logger.error("Error creating lead: {}", e.getMessage());
+            LeadResponse<LeadRegistration> response = new LeadResponse<>();
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+            response.setErrorMsg(e.getMessage());
+            response.setResponse(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
-    private void persistCustomerDetails(String userId, LeadRegistration leadRegistration) {
+    private String persistCustomerDetails(String userId, LeadRegistration leadRegistration) {
         // Fetch user details from the API
         CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
         UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
         if (userDetails == null) {
-            return;
+            return null;
         }
         // Create CustomerRequest object
         CustomerRequest customerRequest = new CustomerRequest();
@@ -124,13 +136,11 @@ public class LeadRegistrationController {
         customerRequest.setSource("QuickTapApp");
         customerRequest.setCustomertype("Prospect");
         customerRequest.setChannelcode(userDetails.getChannelcode());
-        String branchCode = userDetails.getBranchCode();
         customerRequest.setBranchCode(userDetails.getBranchCode());
-        userMgmtResService.getDataFromOtherSchema(branchCode);
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest);
-        entity.getBody();
+        return entity.getBody();
     }
 
 

@@ -1,5 +1,7 @@
 package com.venue.mgmt.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.venue.mgmt.entities.OTP;
 import com.venue.mgmt.repositories.OtpDetailsRepository;
 import org.apache.logging.log4j.LogManager;
@@ -48,18 +50,17 @@ public class CommonUtils {
         return LocalDate.ofInstant(instant, ZoneId.systemDefault());
     }
 
-//    public static Boolean validateOtp(ValidateRequest validateRequest) {
-//        logger.info("CommonUtils - Inside validateOtp method");
-//        boolean checkedPassword = CommonUtils.checkPassword(String.valueOf(validateRequest.getOtp()), validateRequest.getOtpString());
-//        if (!checkedPassword) {
-//            return Boolean.FALSE;
-//        }
-//        if (ChronoUnit.MILLIS.between(getLocalDateTime(validateRequest.getCreationDate()), LocalDateTime.now()) > otpPath.getOtpExpiry()) {
-//            throw new InvalidException(ErrorMsgConstants.ERROR_EXPIRED_SECURITY_CODE);
-//        }
-////            otpTrace.setIsValidated(Boolean.TRUE);
-////            otpTraceRepository.save(otpTrace);
-//        return Boolean.TRUE;
-//    }
+    public static String extractCustomerId(String jsonResponse) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(jsonResponse);
+            JsonNode responseNode = rootNode.path("response");
+            return responseNode.path("customerId").asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
 }

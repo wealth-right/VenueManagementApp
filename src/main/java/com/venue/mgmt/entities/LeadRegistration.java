@@ -45,6 +45,10 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "mobile_number")
     String mobileNumber;
 
+    @Column(name="customer_id")
+    String customerId;
+
+
     @ElementCollection
     @CollectionTable(
             name = "lead_existing_products",
@@ -130,6 +134,14 @@ public class LeadRegistration extends Auditable<String> {
 
     public void setDob(LocalDate dob) {
         this.dob = dob;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 
     public String getOccupation() {
