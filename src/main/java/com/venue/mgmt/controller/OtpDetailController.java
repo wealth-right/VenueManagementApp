@@ -23,12 +23,12 @@ public class OtpDetailController {
 
     public OtpDetailController(OTPService otpService, HttpServletRequest request) {
         this.otpService = otpService;
-        this.request=request;
+        this.request = request;
     }
 
     @PostMapping("/sendOtp")
-    public ResponseEntity<VerifyUserOtpResponse> sendOtp(@RequestHeader(name = "Authorization", required = true) String authHeader,
-                                     @RequestBody @Valid ValidateOtpRequest validateOtpRequest) {
+    public ResponseEntity<VerifyUserOtpResponse> sendOtp(
+            @RequestBody @Valid ValidateOtpRequest validateOtpRequest) {
         logger.info("VenueManagementApp - Inside send otp method with lead Id : {}", validateOtpRequest.getLeadId());
         try {
             String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
@@ -40,33 +40,31 @@ public class OtpDetailController {
             verifyUserOtpResponse.setErrorMsg(null);
             verifyUserOtpResponse.setResponse(!messageSent.isEmpty());
             return ResponseEntity.ok(verifyUserOtpResponse);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @PostMapping("/validateOtp")
-    public ResponseEntity<VerifyUserOtpResponse> validateOtp(@RequestHeader(name="Authorization", required = true) String authHeader,
-            @RequestBody @Valid ValidateOtpRequest validateOtpRequest)  {
+    public ResponseEntity<VerifyUserOtpResponse> validateOtp(
+            @RequestBody @Valid ValidateOtpRequest validateOtpRequest) {
         logger.info("VenueManagementApp - Inside validate otp method");
         VerifyUserOtpResponse verifyUserOtpResponse = new VerifyUserOtpResponse();
-        try{
+        try {
             boolean otpVerifiedSuccessfully = otpService.validateOtp(validateOtpRequest);
             verifyUserOtpResponse.setStatusCode(200);
             verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_VERIFIED_SUCCESS);
             verifyUserOtpResponse.setErrorMsg(null);
             verifyUserOtpResponse.setResponse(otpVerifiedSuccessfully);
-        return ResponseEntity.ok(verifyUserOtpResponse);
-    }catch(Exception e){
-        verifyUserOtpResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_VERIFIED_FAILED);
-        verifyUserOtpResponse.setErrorMsg(e.getMessage());
-        verifyUserOtpResponse.setResponse(false);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(verifyUserOtpResponse);
+            return ResponseEntity.ok(verifyUserOtpResponse);
+        } catch (Exception e) {
+            verifyUserOtpResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_VERIFIED_FAILED);
+            verifyUserOtpResponse.setErrorMsg(e.getMessage());
+            verifyUserOtpResponse.setResponse(false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(verifyUserOtpResponse);
+        }
     }
-    }
-
 
 
 }
