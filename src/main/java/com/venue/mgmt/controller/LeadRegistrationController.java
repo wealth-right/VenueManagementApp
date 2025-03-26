@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.SimpleDateFormat;
@@ -87,11 +89,19 @@ public class LeadRegistrationController {
             response.setResponse(savedLead);
             return ResponseEntity.ok(response);
         }catch (Exception e) {
+            String errorMessage = ((HttpClientErrorException.BadRequest) e).getResponseBodyAsString();
+            String extractedErrorMsg = "An error occurred";
+            try {
+                JSONObject json = new JSONObject(errorMessage);
+                extractedErrorMsg = json.getString("errorMsg");
+            } catch (Exception jsonException) {
+                logger.error("Failed to parse error message", jsonException);
+            }
             logger.error("Error creating lead: {}", e.getMessage());
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
             response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-            response.setErrorMsg(e.getMessage());
+            response.setErrorMsg(extractedErrorMsg);
             response.setResponse(null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
