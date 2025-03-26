@@ -1,5 +1,6 @@
 package com.venue.mgmt.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.venue.mgmt.util.JWTValidator;
 import com.venue.mgmt.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -10,7 +11,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JwtAuthenticationFilter extends HttpFilter {
 
@@ -37,21 +40,32 @@ public class JwtAuthenticationFilter extends HttpFilter {
 
         try {
             if (authHeader == null || !JWTValidator.validateToken(authHeader)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized", "Invalid or missing Authorization Token");
                 return;
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        if (JwtUtil.checkIfAuthTokenExpired(authHeader)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized", e.getMessage());
             return;
         }
 
+        if (JwtUtil.checkIfAuthTokenExpired(authHeader)) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized", "Token has expired");
+            return;
+        }
         String userId = JwtUtil.extractUserIdFromToken(authHeader);
         request.setAttribute("userId", userId);
 
         chain.doFilter(request, response);
+    }
+    private void sendErrorResponse(HttpServletResponse response, int statusCode, String statusMsg, String errorMsg) throws IOException {
+        response.setStatus(statusCode);
+        response.setContentType("application/json");
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("statusCode", statusCode);
+        responseBody.put("statusMsg", statusMsg);
+        responseBody.put("errorMsg", errorMsg);
+        responseBody.put("response", null);
+        ObjectMapper objectMapper = new ObjectMapper();
+        response.getWriter().write(objectMapper.writeValueAsString(responseBody));
     }
 }
