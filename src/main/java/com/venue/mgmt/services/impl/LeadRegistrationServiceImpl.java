@@ -128,12 +128,12 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     @Override
     @Transactional
-    public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead) {
+    public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead,String authHeader) {
         try {
             LeadRegistration existingLead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
             String userId = request.getAttribute(USER_ID).toString();
-            persistCustomerDetails(userId,existingLead.getCustomerId(), updatedLead);
+            persistCustomerDetails(userId,existingLead.getCustomerId(), updatedLead,authHeader);
             // Update the fields
             existingLead.setFullName(updatedLead.getFullName());
             existingLead.setEmail(updatedLead.getEmail());
@@ -168,7 +168,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     }
 
     private void persistCustomerDetails(String userId, String customerId,
-                                        LeadRegistration leadRegistration) {
+                                        LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
         CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
         UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
@@ -214,7 +214,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         customerRequest.setBranchCode(userDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        customerServiceClient.saveCustomerData(customerRequest);
+        customerServiceClient.saveCustomerData(customerRequest,authHeader);
     }
 
     @Override

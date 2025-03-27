@@ -4,6 +4,7 @@ public class ErrorMsgConstants {
     public static final String MINUTES = " minutes.";
     public static  final String VENUE_NOT_FOUND="Venue not found with id: ";
     public static final String FAILED="Failed";
+    public static final String ERROR_INTERNAL_SERVER = "Something went wrong.";
 }
 
 

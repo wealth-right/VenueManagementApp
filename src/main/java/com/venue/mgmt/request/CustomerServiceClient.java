@@ -16,9 +16,10 @@ public class CustomerServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<String> saveCustomerData(CustomerRequest customerRequest) {
+    public ResponseEntity<String> saveCustomerData(CustomerRequest customerRequest,String authorization) {
         String url = "https://api.dev.wealth-right.com/Customer/api/CreateAndUpdateProspect";
         HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization",  authorization);
         headers.set("Content-Type", "application/json");
         HttpEntity<CustomerRequest> request = new HttpEntity<>(customerRequest, headers);
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);

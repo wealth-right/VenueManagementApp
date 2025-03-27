@@ -71,11 +71,12 @@ public class LeadRegistrationController {
     @PostMapping
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
+            @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) {
         try {
             String userId = request.getAttribute(USER_ID).toString();
             // Create CustomerRequest object
-            String customerDetails = persistCustomerDetails(userId, leadRegistration);
+            String customerDetails = persistCustomerDetails(userId, leadRegistration,authHeader);
             String customerId = CommonUtils.extractCustomerId(customerDetails);
             leadRegistration.setActive(true);
             leadRegistration.setCustomerId(customerId);
@@ -107,7 +108,7 @@ public class LeadRegistrationController {
         }
     }
 
-    private String persistCustomerDetails(String userId, LeadRegistration leadRegistration) {
+    private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
         CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
         UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
@@ -129,9 +130,9 @@ public class LeadRegistrationController {
         customerRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
-            if (leadRegistration.getGender().equalsIgnoreCase("M")) {
+            if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
                 customerRequest.setTitle("Mr.");
-            } else if (leadRegistration.getGender().equalsIgnoreCase("F") &&
+            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") &&
                     leadRegistration.getMaritalStatus() != null
                     && (!leadRegistration.getMaritalStatus().isEmpty())
                     && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
@@ -149,7 +150,7 @@ public class LeadRegistrationController {
         customerRequest.setBranchCode(userDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest);
+        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
         return entity.getBody();
     }
 
@@ -322,7 +323,7 @@ public class LeadRegistrationController {
         logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
 
         try {
-            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration);
+            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration,authHeader);
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
             response.setStatusCode(200);
             response.setStatusMsg(SUCCESS);

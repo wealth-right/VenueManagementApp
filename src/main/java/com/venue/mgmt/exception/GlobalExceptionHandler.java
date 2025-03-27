@@ -1,27 +1,64 @@
 package com.venue.mgmt.exception;
 
+import com.venue.mgmt.constant.ErrorMsgConstants;
 import org.apache.coyote.BadRequestException;
 import org.json.JSONObject;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
+import java.nio.file.AccessDeniedException;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage()));
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", errors.toString());
+        String errorMsg = ex.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .orElse("Validation error");
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", errorMsg);
     }
+
+    @ExceptionHandler(ResourceAccessException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceAccessException(ResourceAccessException ex) {
+        return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", "The server is not running or cannot be reached.");
+    }
+
+    @ExceptionHandler(Throwable.class)
+    protected ResponseEntity<Map<String, Object>> handleExceptions(Throwable ex) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        String message = ErrorMsgConstants.ERROR_INTERNAL_SERVER;
+
+        if (ex instanceof AccessDeniedException) {
+            status = HttpStatus.NOT_ACCEPTABLE;
+            message = "You are not authorized to access this request";
+        } else if (ex instanceof HttpStatusException httpEx) {
+            status = httpEx.getCode();
+            message = (httpEx.getReason() != null && !httpEx.getReason().isEmpty())
+                    ? httpEx.getReason()
+                    : message;
+        } else if (ex.getClass().isAnnotationPresent(ResponseStatus.class)) {
+            ResponseStatus annotation = ex.getClass().getAnnotation(ResponseStatus.class);
+            status = annotation.code();
+            if (!annotation.reason().isEmpty()) {
+                message = annotation.reason();
+            }
+        }
+        return buildErrorResponse(status, "Internal Server Error", message);
+    }
+
+
 
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<Map<String, Object>> handleHttpClientErrorException(HttpClientErrorException ex) {
@@ -30,16 +67,20 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", jsonResponse.getString("message"));
     }
 
+
+
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<Map<String, Object>> handleAlreadyExistsException(AlreadyExistsException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", ex.getMessage());
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
+//        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", ex.getMessage());
+//    }
+
+
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequestException(BadRequestException ex) {
