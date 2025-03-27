@@ -43,7 +43,19 @@ public class GlobalExceptionHandler {
         if (ex instanceof AccessDeniedException) {
             status = HttpStatus.NOT_ACCEPTABLE;
             message = "You are not authorized to access this request";
-        } else if (ex instanceof HttpStatusException httpEx) {
+        }
+        else if(ex instanceof HttpClientErrorException) {
+            status = HttpStatus.BAD_REQUEST;
+            String rawResponse = ex.getMessage();
+            int startIndex = rawResponse.indexOf("{");
+            int endIndex = rawResponse.lastIndexOf("}") + 1;
+            if (startIndex != -1 && endIndex != -1) {
+                String jsonResponse = rawResponse.substring(startIndex, endIndex);
+                JSONObject jsonObject = new JSONObject(jsonResponse);
+                message = jsonObject.getString("errorMsg");
+            }
+        }
+        else if (ex instanceof HttpStatusException httpEx) {
             status = httpEx.getCode();
             message = (httpEx.getReason() != null && !httpEx.getReason().isEmpty())
                     ? httpEx.getReason()
@@ -60,12 +72,12 @@ public class GlobalExceptionHandler {
 
 
 
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<Map<String, Object>> handleHttpClientErrorException(HttpClientErrorException ex) {
-        String responseBody = ex.getResponseBodyAsString();
-        JSONObject jsonResponse = new JSONObject(responseBody);
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", jsonResponse.getString("message"));
-    }
+//    @ExceptionHandler(HttpClientErrorException.class)
+//    public ResponseEntity<Map<String, Object>> handleHttpClientErrorException(HttpClientErrorException ex) {
+//        String responseBody = ex.getResponseBodyAsString();
+//        JSONObject jsonResponse = new JSONObject(responseBody);
+//        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", jsonResponse.getString("message"));
+//    }
 
 
 
