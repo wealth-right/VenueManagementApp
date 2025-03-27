@@ -51,6 +51,7 @@ public class GlobalExceptionHandler {
             int endIndex = rawResponse.lastIndexOf("}") + 1;
             if (startIndex != -1 && endIndex != -1) {
                 String jsonResponse = rawResponse.substring(startIndex, endIndex);
+                jsonResponse=jsonResponse.replace("<EOL>", "\n");
                 JSONObject jsonObject = new JSONObject(jsonResponse);
                 message = jsonObject.getString("errorMsg");
             }
@@ -72,12 +73,6 @@ public class GlobalExceptionHandler {
 
 
 
-//    @ExceptionHandler(HttpClientErrorException.class)
-//    public ResponseEntity<Map<String, Object>> handleHttpClientErrorException(HttpClientErrorException ex) {
-//        String responseBody = ex.getResponseBodyAsString();
-//        JSONObject jsonResponse = new JSONObject(responseBody);
-//        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", jsonResponse.getString("message"));
-//    }
 
 
 
@@ -87,10 +82,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
     }
 
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
-//        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", ex.getMessage());
-//    }
 
 
 
