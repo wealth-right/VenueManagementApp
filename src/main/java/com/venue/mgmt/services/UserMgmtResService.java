@@ -25,7 +25,7 @@ public class UserMgmtResService {
     }
 
     public CustomerRequest getCustomerDetails(String customerId) {
-        if(customerId==null){
+        if (customerId == null || customerId.isEmpty()) {
             return null;
         }
         String sql = "select * from customerservice.customer where customerid = ?";
