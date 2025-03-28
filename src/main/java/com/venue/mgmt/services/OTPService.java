@@ -4,6 +4,7 @@ import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.entities.OTP;
 import com.venue.mgmt.entities.OtpDetails;
 import com.venue.mgmt.exception.AlreadyExistsException;
+import com.venue.mgmt.exception.InvalidOtpException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.OtpDetailsRepository;
 import com.venue.mgmt.request.ValidateOtpRequest;
@@ -119,6 +120,8 @@ public class OTPService extends OtpDetailsUtils {
             } else {
                 latestOtpDetails.setAttempts(latestOtpDetails.getAttempts() + 1); // Increment attempts on failure
                 otpDetailsRepository.save(latestOtpDetails);
+                int attemptsLeft = 3 - latestOtpDetails.getAttempts();
+                throw new InvalidOtpException("Please enter a valid OTP. You have " + attemptsLeft + " attempts left.");
             }
         }
         return false;

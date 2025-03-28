@@ -19,19 +19,30 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
     int countByVenue_VenueIdAndCreatedBy(Long venueId, String createdBy);
     int countByVenue_VenueIdAndCreatedByAndCreationDate(Long venueId, String createdBy, Date creationDate);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId")
-    Page<LeadRegistration> findAllByUserId(@Param("userId") String userId, Pageable pageable);
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndIsDeletedFalse(@Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId")
-    Page<LeadRegistration> findAllByUserIdAndVenueId(@Param("userId") String userId, @Param("venueId") Long venueId, Pageable pageable);
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndIsDeletedFalse(@Param("userId") String userId, @Param("venueId") Long venueId, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate BETWEEN :startDate AND :endDate")
-    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBetween(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, @Param("endDate") Date endDate, Pageable pageable);
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate >= :startDate")
-    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateAfter(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, Pageable pageable);
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId  and l.creationDate BETWEEN :startDate AND :endDate and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndCreationDateBetweenAndIsDeletedFalse(@Param("userId") String userId, @Param("startDate") Date startDate, @Param("endDate") Date endDate, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate <= :endDate")
-    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBefore(@Param("userId") String userId,
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate BETWEEN :startDate AND :endDate and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBetweenAndIsDeletedFalse(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, @Param("endDate") Date endDate, Pageable pageable);
+
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.creationDate >= :startDate and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndCreationDateAfterAndIsDeletedFalse(@Param("userId") String userId, @Param("startDate") Date startDate, Pageable pageable);
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate >= :startDate and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateAfterAndIsDeletedFalse(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, Pageable pageable);
+
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.creationDate <= :endDate and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndCreationDateBeforeAndIsDeletedFalse(@Param("userId") String userId,
+                                                                                           @Param("endDate") Date endDate, Pageable pageable);
+
+
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate <= :endDate and l.isDeleted = false")
+    Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBeforeAndIsDeletedFalse(@Param("userId") String userId,
                                                                           @Param("venueId") Long venueId,
                                                                           @Param("endDate") Date endDate, Pageable pageable);
     
