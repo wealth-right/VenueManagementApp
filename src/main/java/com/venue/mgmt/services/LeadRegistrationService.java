@@ -17,6 +17,6 @@ public interface LeadRegistrationService {
                                                                                              int page, int size, String userId,
                                                                                              Long venueId, Date startDate, Date endDate);
     List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId);
-    LeadRegistration updateLead(Long leadId, LeadRegistration leadRegistration);
+    LeadRegistration updateLead(Long leadId, LeadRegistration leadRegistration,String authHeader);
     void deleteLead(Long leadId);
 }

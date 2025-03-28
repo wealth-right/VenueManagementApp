@@ -18,14 +18,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 
@@ -55,7 +53,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     @Override
     @Transactional
     public LeadRegistration saveLead(LeadRegistration leadRegistration) {
-        try {
             Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
                     .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
             logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
@@ -63,32 +60,22 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             leadRegistration.setVenue(venue);
             logger.info("Saving lead registration...");
             return leadRegRepository.save(leadRegistration);
-        } catch (Exception e) {
-            logger.error("Error while saving lead with campaign: {}", e.getMessage(), e);
-            throw e;
-        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedBy(String sortDirection, int page, int size, String userId) {
-        try {
-            Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? 
+            Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
             Sort sort = Sort.by(direction, "creationDate");
             Pageable pageable = PageRequest.of(page, size, sort);
             return leadRegRepository.findAllByUserId(userId,pageable);
-        } catch (Exception e) {
-            logger.error("Error while fetching all leads: {}", e.getMessage(), e);
-            throw e;
         }
-    }
 
     @Override
     public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page,
                                                                                                     int size, String userId, Long venueId,
                                                                                                     Date startDate, Date endDate) {
-        try {
             Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                     Sort.Direction.DESC : Sort.Direction.ASC;
             Sort sort = Sort.by(direction, "creationDate");
@@ -104,10 +91,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             }else{
                 return leadRegRepository.findAllByUserId(userId, pageable);
             }
-        } catch (Exception e) {
-            logger.error("Error while fetching all leads: {}", e.getMessage(), e);
-            throw e;
-        }
     }
 
 
@@ -115,25 +98,19 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     @Transactional(readOnly = true)
     public List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId) {
 
-        try {
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
                 return getAllLeadsSortedByCreationDateAndCreatedBy("desc", 0, Integer.MAX_VALUE,userId).getContent();
             }
             return leadRegRepository.searchLeads(searchTerm,userId);
-        } catch (Exception e) {
-            logger.error("Error while searching leads: {}", e.getMessage(), e);
-            throw e;
-        }
     }
 
     @Override
     @Transactional
-    public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead) {
-        try {
+    public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead,String authHeader) {
             LeadRegistration existingLead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
             String userId = request.getAttribute(USER_ID).toString();
-            persistCustomerDetails(userId,existingLead.getCustomerId(), updatedLead);
+            persistCustomerDetails(userId,existingLead.getCustomerId(), updatedLead,authHeader);
             // Update the fields
             existingLead.setFullName(updatedLead.getFullName());
             existingLead.setEmail(updatedLead.getEmail());
@@ -161,14 +138,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             LeadRegistration savedLead = leadRegRepository.save(existingLead);
             logger.info("Updated lead with ID: {}", savedLead.getLeadId());
             return savedLead;
-        } catch (Exception e) {
-            logger.error("Error while updating lead: {}", e.getMessage(), e);
-            throw e;
         }
-    }
 
     private void persistCustomerDetails(String userId, String customerId,
-                                        LeadRegistration leadRegistration) {
+                                        LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
         CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
         UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
@@ -214,22 +187,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         customerRequest.setBranchCode(userDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        customerServiceClient.saveCustomerData(customerRequest);
+        customerServiceClient.saveCustomerData(customerRequest,authHeader);
     }
 
     @Override
     @Transactional
     public void deleteLead(Long leadId) {
-        try {
             LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-
-            leadRegRepository.delete(lead);
-            logger.info("Deleted lead with ID: {}", leadId);
-        } catch (Exception e) {
-            logger.error("Error while deleting lead: {}", e.getMessage(), e);
-            throw e;
-        }
+            lead.setDeleted(true);
+            leadRegRepository.save(lead);
+            logger.info("Marked lead with ID: {} as deleted", leadId);
     }
 
 }

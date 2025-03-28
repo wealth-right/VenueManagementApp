@@ -11,7 +11,6 @@ import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
-import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.util.CommonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -21,18 +20,16 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -58,24 +55,22 @@ public class LeadRegistrationController {
 
     private final HttpServletRequest request;
 
-    private final UserMgmtResService userMgmtResService;
 
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request, UserMgmtResService userMgmtResService) {
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
         this.request = request;
-        this.userMgmtResService = userMgmtResService;
     }
 
     @PostMapping
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
+            @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) {
-        try {
             String userId = request.getAttribute(USER_ID).toString();
             // Create CustomerRequest object
-            String customerDetails = persistCustomerDetails(userId, leadRegistration);
+            String customerDetails = persistCustomerDetails(userId, leadRegistration,authHeader);
             String customerId = CommonUtils.extractCustomerId(customerDetails);
             leadRegistration.setActive(true);
             leadRegistration.setCustomerId(customerId);
@@ -88,26 +83,9 @@ public class LeadRegistrationController {
             response.setErrorMsg(null);
             response.setResponse(savedLead);
             return ResponseEntity.ok(response);
-        }catch (Exception e) {
-            String errorMessage = ((HttpClientErrorException.BadRequest) e).getResponseBodyAsString();
-            String extractedErrorMsg = "An error occurred";
-            try {
-                JSONObject json = new JSONObject(errorMessage);
-                extractedErrorMsg = json.getString("errorMsg");
-            } catch (Exception jsonException) {
-                logger.error("Failed to parse error message", jsonException);
-            }
-            logger.error("Error creating lead: {}", e.getMessage());
-            LeadResponse<LeadRegistration> response = new LeadResponse<>();
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-            response.setErrorMsg(extractedErrorMsg);
-            response.setResponse(null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
     }
 
-    private String persistCustomerDetails(String userId, LeadRegistration leadRegistration) {
+    private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
         CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
         UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
@@ -129,9 +107,9 @@ public class LeadRegistrationController {
         customerRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
-            if (leadRegistration.getGender().equalsIgnoreCase("M")) {
+            if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
                 customerRequest.setTitle("Mr.");
-            } else if (leadRegistration.getGender().equalsIgnoreCase("F") &&
+            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") &&
                     leadRegistration.getMaritalStatus() != null
                     && (!leadRegistration.getMaritalStatus().isEmpty())
                     && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
@@ -149,7 +127,7 @@ public class LeadRegistrationController {
         customerRequest.setBranchCode(userDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest);
+        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
         return entity.getBody();
     }
 
@@ -160,7 +138,7 @@ public class LeadRegistrationController {
             @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable,
             @RequestParam(required = false) Long venueId,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) throws Exception {
+            @RequestParam(required = false) String endDate) throws ParseException {
 
         logger.info("VenueManagementApp - Inside get All Leads Method with pageable: {}", pageable);
 
@@ -172,7 +150,6 @@ public class LeadRegistrationController {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date start = startDate != null ? formatter.parse(startDate) : null;
         Date end = endDate != null ? formatter.parse(endDate) : null;
-        try {
             if (start != null && end != null && start.equals(end)) {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(end);
@@ -236,23 +213,13 @@ public class LeadRegistrationController {
             response.setPagination(paginationDetails);
 
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error getting all leads: {}", e.getMessage());
-            ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-            response.setErrorMsg(e.getMessage());
-            response.setResponse(null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
     }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<LeadWithVenueDetails>>> searchLeads(
             @RequestHeader(name = "Authorization", required = true) String authHeader,
-            @RequestParam(required = false) String query) throws Exception {
+            @RequestParam(required = false) String query)   {
         logger.info("VenueManagementApp - Inside search Leads Method with query: {}", query);
-        try {
             String userId = (String) request.getAttribute(USER_ID);
             List<LeadRegistration> leads = leadRegistrationService.simpleSearchLeads(query, userId);
             List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
@@ -301,15 +268,6 @@ public class LeadRegistrationController {
             response.setErrorMsg(null);
             response.setResponse(leadWithVenueDetailsList);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error searching leads: {}", e.getMessage());
-            ApiResponse<List<LeadWithVenueDetails>> response = new ApiResponse<>();
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-            response.setErrorMsg(e.getMessage());
-            response.setResponse(null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
     }
 
     @PutMapping("/{leadId}")
@@ -317,27 +275,15 @@ public class LeadRegistrationController {
     public ResponseEntity<LeadResponse<LeadRegistration>> updateLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @PathVariable Long leadId,
-            @Valid @RequestBody LeadRegistration leadRegistration) throws Exception {
-
+            @Valid @RequestBody LeadRegistration leadRegistration)  {
         logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
-
-        try {
-            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration);
+            LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration,authHeader);
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
             response.setStatusCode(200);
             response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(updatedLead);
             return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            logger.error("Error updating lead: {}", e.getMessage());
-            LeadResponse<LeadRegistration> response = new LeadResponse<>();
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setStatusMsg(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-            response.setErrorMsg(e.getMessage());
-            response.setResponse(null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
     }
 
 

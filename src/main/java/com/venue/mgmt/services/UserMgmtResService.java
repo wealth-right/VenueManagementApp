@@ -25,6 +25,9 @@ public class UserMgmtResService {
     }
 
     public CustomerRequest getCustomerDetails(String customerId) {
+        if (customerId == null || customerId.isEmpty()) {
+            return null;
+        }
         String sql = "select * from customerservice.customer where customerid = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{customerId}, customerRowMapper());
     }
