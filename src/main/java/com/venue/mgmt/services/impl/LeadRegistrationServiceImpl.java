@@ -7,6 +7,7 @@ import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.request.CustomerRequest;
 import com.venue.mgmt.request.CustomerServiceClient;
+import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,11 +33,11 @@ import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private static final Logger logger = LogManager.getLogger(LeadRegistrationServiceImpl.class);
-    
+
     private final LeadRegRepository leadRegRepository;
 
     private final VenueRepository venueRepository;
-    
+
     private final UserMgmtResService userMgmtResService;
 
 
@@ -154,9 +155,8 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private void persistCustomerDetails(String userId, String customerId,
                                         LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
-        CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
-        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
-        if (userDetails == null) {
+        UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
+        if (userMasterDetails == null) {
             return;
         }
         CustomerRequest customerRequest = userMgmtResService.getCustomerDetails(customerId);
@@ -194,8 +194,8 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         customerRequest.setCountryOfResidence("India");
         customerRequest.setSource("QuickTapApp");
         customerRequest.setCustomertype("Prospect");
-        customerRequest.setChannelcode(userDetails.getChannelcode());
-        customerRequest.setBranchCode(userDetails.getBranchCode());
+        customerRequest.setChannelcode(userMasterDetails.getChannelCode());
+        customerRequest.setBranchCode(userMasterDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         customerServiceClient.saveCustomerData(customerRequest,authHeader);

@@ -92,12 +92,6 @@ public class LeadRegistrationController {
 
     private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
-        CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
-//        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
-//        if (userDetails.getUserId() == null) {
-//
-//            return null;
-//        }
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
         if(userMasterDetails == null){
             return null;

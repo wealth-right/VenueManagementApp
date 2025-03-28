@@ -49,6 +49,7 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
     @Query(value = "SELECT * FROM lead_registration l " +
            "WHERE l.is_active = true " +
             "AND l.created_by=:userId "+
+            "AND l.is_deleted = false " +
            "AND (:searchTerm IS NULL OR TRIM(:searchTerm) = '' OR " +
            "     l.full_name ILIKE CONCAT('%', TRIM(:searchTerm), '%') OR " +
            "     l.email ILIKE CONCAT('%', TRIM(:searchTerm), '%') OR " +
