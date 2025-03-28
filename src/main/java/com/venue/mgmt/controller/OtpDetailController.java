@@ -48,10 +48,17 @@ public class OtpDetailController {
         VerifyUserOtpResponse verifyUserOtpResponse = new VerifyUserOtpResponse();
         try {
             boolean otpVerifiedSuccessfully = otpService.validateOtp(validateOtpRequest);
-            verifyUserOtpResponse.setStatusCode(200);
-            verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_VERIFIED_SUCCESS);
-            verifyUserOtpResponse.setErrorMsg(null);
-            verifyUserOtpResponse.setResponse(otpVerifiedSuccessfully);
+            if(otpVerifiedSuccessfully) {
+                verifyUserOtpResponse.setStatusCode(200);
+                verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_VERIFIED_SUCCESS);
+                verifyUserOtpResponse.setErrorMsg(null);
+                verifyUserOtpResponse.setResponse(true);
+            }else{
+                verifyUserOtpResponse.setStatusCode(400);
+                verifyUserOtpResponse.setStatusMsg("Failed");
+                verifyUserOtpResponse.setErrorMsg("OTP verification failed. Please try again.");
+                verifyUserOtpResponse.setResponse(false);
+            }
             return ResponseEntity.ok(verifyUserOtpResponse);
         } catch (Exception e) {
             verifyUserOtpResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
