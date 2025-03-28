@@ -62,35 +62,46 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             return leadRegRepository.save(leadRegistration);
     }
 
+
     @Override
     @Transactional(readOnly = true)
-    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedBy(String sortDirection, int page, int size, String userId) {
+    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndIsDeletedFalse(String sortDirection, int page, int size, String userId) {
             Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
             Sort sort = Sort.by(direction, "creationDate");
             Pageable pageable = PageRequest.of(page, size, sort);
-            return leadRegRepository.findAllByUserId(userId,pageable);
+            return leadRegRepository.findAllByUserIdAndIsDeletedFalse(userId,pageable);
         }
 
     @Override
-    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange(String sortDirection, int page,
-                                                                                                    int size, String userId, Long venueId,
-                                                                                                    Date startDate, Date endDate) {
-            Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
-                    Sort.Direction.DESC : Sort.Direction.ASC;
-            Sort sort = Sort.by(direction, "creationDate");
-            Pageable pageable = PageRequest.of(page, size, sort);
+    public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRangeAndIsDeletedFalse(String sortDirection, int page,
+                                                                                                                     int size, String userId, Long venueId,
+                                                                                                                     Date startDate, Date endDate) {
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sort = Sort.by(direction, "creationDate");
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        if (venueId != null) {
             if (startDate != null && endDate != null) {
-                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBetween(userId, venueId, startDate, endDate, pageable);
+                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBetweenAndIsDeletedFalse(userId, venueId, startDate, endDate, pageable);
             } else if (startDate != null) {
-                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateAfter(userId, venueId, startDate, pageable);
+                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateAfterAndIsDeletedFalse(userId, venueId, startDate, pageable);
             } else if (endDate != null) {
-                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBefore(userId, venueId, endDate, pageable);
-            } else if (venueId!=null){
-                return leadRegRepository.findAllByUserIdAndVenueId(userId, venueId, pageable);
-            }else{
-                return leadRegRepository.findAllByUserId(userId, pageable);
+                return leadRegRepository.findAllByUserIdAndVenueIdAndCreationDateBeforeAndIsDeletedFalse(userId, venueId, endDate, pageable);
+            } else {
+                return leadRegRepository.findAllByUserIdAndVenueIdAndIsDeletedFalse(userId, venueId, pageable);
             }
+        } else {
+            if (startDate != null && endDate != null) {
+                return leadRegRepository.findAllByUserIdAndCreationDateBetweenAndIsDeletedFalse(userId, startDate, endDate, pageable);
+            } else if (startDate != null) {
+                return leadRegRepository.findAllByUserIdAndCreationDateAfterAndIsDeletedFalse(userId, startDate, pageable);
+            } else if (endDate != null) {
+                return leadRegRepository.findAllByUserIdAndCreationDateBeforeAndIsDeletedFalse(userId, endDate, pageable);
+            } else {
+                return leadRegRepository.findAllByUserIdAndIsDeletedFalse(userId, pageable);
+            }
+        }
     }
 
 
@@ -99,7 +110,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     public List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId) {
 
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
-                return getAllLeadsSortedByCreationDateAndCreatedBy("desc", 0, Integer.MAX_VALUE,userId).getContent();
+                return getAllLeadsSortedByCreationDateAndCreatedByAndIsDeletedFalse("desc", 0, Integer.MAX_VALUE,userId).getContent();
             }
             return leadRegRepository.searchLeads(searchTerm,userId);
     }

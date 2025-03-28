@@ -156,7 +156,7 @@ public class LeadRegistrationController {
                 calendar.add(Calendar.DAY_OF_MONTH, 1);
                 end = calendar.getTime();
             }
-            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
+            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRangeAndIsDeletedFalse
                     (pageable.getSort().toString(), pageable.getPageNumber(), pageable.getPageSize(), userId, venueId, start, end);
 
             List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
