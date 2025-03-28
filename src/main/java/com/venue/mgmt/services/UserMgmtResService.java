@@ -1,6 +1,7 @@
 package com.venue.mgmt.services;
 
 import com.venue.mgmt.request.CustomerRequest;
+import com.venue.mgmt.request.UserMasterRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,30 @@ public class UserMgmtResService {
         }
         String sql = "select * from customerservice.customer where customerid = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{customerId}, customerRowMapper());
+    }
+
+    public UserMasterRequest getUserMasterDetails(String userId){
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        String sql = "select id,user_id,first_name,last_name,mobile_number,email_id,branchcode,channelcode " +
+                "from usermgmt.usermaster where user_id = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{userId}, userMasterRowMapper());
+    }
+
+    private RowMapper<UserMasterRequest> userMasterRowMapper(){
+        return (rs, rowNum) -> {
+            UserMasterRequest userMasterRequest = new UserMasterRequest();
+            userMasterRequest.setId(rs.getString("id"));
+            userMasterRequest.setUserId(rs.getString("user_id"));
+            userMasterRequest.setFirstName(rs.getString("first_name"));
+            userMasterRequest.setLastName(rs.getString("last_name"));
+            userMasterRequest.setMobileNumber(rs.getString("mobile_number"));
+            userMasterRequest.setEmailId(rs.getString("email_id"));
+            userMasterRequest.setBranchCode(rs.getString("branchcode"));
+            userMasterRequest.setChannelCode(rs.getString("channelcode"));
+            return userMasterRequest;
+        };
     }
 
     private RowMapper<CustomerRequest> customerRowMapper() {

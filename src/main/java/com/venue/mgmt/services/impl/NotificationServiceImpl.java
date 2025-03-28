@@ -112,7 +112,9 @@ public class NotificationServiceImpl implements INotificationService {
 
             // Extract branchCode from userMaster
             Map<String, Object> userMaster = (Map<String, Object>) responseBody.get("response");
-            String branchCode = (String) userMaster.get("branchcode");
+            Map<String, Object> userMasterDetails = (Map<String, Object>) userMaster.get("userMaster");
+
+            String branchCode = (String) userMasterDetails.get("branchcode");
 
             // Get branch details from other schema
             Map<String, Object> branchDetails=null;
