@@ -79,7 +79,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<Map<String, Object>> handleAlreadyExistsException(AlreadyExistsException ex) {
-        return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getReason());
+    }
+
+    @ExceptionHandler(InvalidOtpException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<Map<String, Object>> handleInvalidOtpException(InvalidOtpException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Invalid OTP", ex.getMessage());
     }
 
 

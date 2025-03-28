@@ -7,10 +7,12 @@ import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.request.CustomerRequest;
 import com.venue.mgmt.request.CustomerServiceClient;
+import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
+import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.util.CommonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -55,12 +57,15 @@ public class LeadRegistrationController {
 
     private final HttpServletRequest request;
 
+    private final UserMgmtResService userMgmtResService;
 
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request) {
+
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request,UserMgmtResService userMgmtResService) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
         this.request = request;
+        this.userMgmtResService = userMgmtResService;
     }
 
     @PostMapping
@@ -88,8 +93,13 @@ public class LeadRegistrationController {
     private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
         CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
-        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
-        if (userDetails == null) {
+//        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
+//        if (userDetails.getUserId() == null) {
+//
+//            return null;
+//        }
+        UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
+        if(userMasterDetails == null){
             return null;
         }
         // Create CustomerRequest object
@@ -123,8 +133,8 @@ public class LeadRegistrationController {
         customerRequest.setCountryOfResidence("India");
         customerRequest.setSource("QuickTapApp");
         customerRequest.setCustomertype("Prospect");
-        customerRequest.setChannelcode(userDetails.getChannelcode());
-        customerRequest.setBranchCode(userDetails.getBranchCode());
+        customerRequest.setChannelcode(userMasterDetails.getChannelCode());
+        customerRequest.setBranchCode(userMasterDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
@@ -156,7 +166,7 @@ public class LeadRegistrationController {
                 calendar.add(Calendar.DAY_OF_MONTH, 1);
                 end = calendar.getTime();
             }
-            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRange
+            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRangeAndIsDeletedFalse
                     (pageable.getSort().toString(), pageable.getPageNumber(), pageable.getPageSize(), userId, venueId, start, end);
 
             List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
