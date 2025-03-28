@@ -46,7 +46,6 @@ public class OtpDetailController {
             @RequestBody @Valid ValidateOtpRequest validateOtpRequest) {
         logger.info("VenueManagementApp - Inside validate otp method");
         VerifyUserOtpResponse verifyUserOtpResponse = new VerifyUserOtpResponse();
-        try {
             boolean otpVerifiedSuccessfully = otpService.validateOtp(validateOtpRequest);
             if(otpVerifiedSuccessfully) {
                 verifyUserOtpResponse.setStatusCode(200);
@@ -60,13 +59,6 @@ public class OtpDetailController {
                 verifyUserOtpResponse.setResponse(false);
             }
             return ResponseEntity.ok(verifyUserOtpResponse);
-        } catch (Exception e) {
-            verifyUserOtpResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            verifyUserOtpResponse.setStatusMsg(GeneralMsgConstants.OTP_VERIFIED_FAILED);
-            verifyUserOtpResponse.setErrorMsg(e.getMessage());
-            verifyUserOtpResponse.setResponse(false);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(verifyUserOtpResponse);
-        }
     }
 
 

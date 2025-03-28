@@ -196,6 +196,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
             lead.setDeleted(true);
+            lead.setActive(false);
             leadRegRepository.save(lead);
             logger.info("Marked lead with ID: {} as deleted", leadId);
     }
