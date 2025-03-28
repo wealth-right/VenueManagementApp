@@ -30,7 +30,6 @@ public class OtpDetailController {
     public ResponseEntity<VerifyUserOtpResponse> sendOtp(
             @RequestBody @Valid ValidateOtpRequest validateOtpRequest) {
         logger.info("VenueManagementApp - Inside send otp method with lead Id : {}", validateOtpRequest.getLeadId());
-        try {
             String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
             String messageSent = otpService.generateAndSendOTP(validateOtpRequest, userId);
             VerifyUserOtpResponse verifyUserOtpResponse;
@@ -40,10 +39,7 @@ public class OtpDetailController {
             verifyUserOtpResponse.setErrorMsg(null);
             verifyUserOtpResponse.setResponse(!messageSent.isEmpty());
             return ResponseEntity.ok(verifyUserOtpResponse);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
 
     @PostMapping("/validateOtp")
     public ResponseEntity<VerifyUserOtpResponse> validateOtp(

@@ -1,5 +1,6 @@
 package com.venue.mgmt.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.venue.mgmt.request.LoginRequest;
 import com.venue.mgmt.request.VerifyUserOtpRequest;
 import com.venue.mgmt.response.ValidateUserResponse;
@@ -28,11 +29,12 @@ public class LoginController {
     private INotificationService notificationService;
 
     @PostMapping(value = "/sendOtp",
-                consumes = MediaType.APPLICATION_JSON_VALUE,
-                produces = MediaType.APPLICATION_JSON_VALUE)
-    public ValidateUserResponse login(@RequestBody @Valid LoginRequest loginRequest) throws Exception {
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest loginRequest) throws JsonProcessingException {
         logger.info("LoginController - Inside login method");
-        return loginService.login(loginRequest);
+            ValidateUserResponse response = loginService.login(loginRequest);
+            return ResponseEntity.ok(response);
     }
 
     @PostMapping(value = "/verify-otp",

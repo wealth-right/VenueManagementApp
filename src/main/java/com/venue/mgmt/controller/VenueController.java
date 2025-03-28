@@ -4,6 +4,7 @@ import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.constant.GeneralMsgConstants;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.response.VenueResponse;
@@ -20,6 +21,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -32,10 +34,13 @@ public class VenueController {
 
     private final HttpServletRequest request;
 
+    private final LeadRegRepository leadRegRepository;
 
-    public VenueController(VenueService venueService, HttpServletRequest request) {
+
+    public VenueController(VenueService venueService, HttpServletRequest request,LeadRegRepository leadRegRepository) {
         this.venueService = venueService;
         this.request = request;
+        this.leadRegRepository = leadRegRepository;
     }
 
     @PostMapping
@@ -72,9 +77,13 @@ public class VenueController {
 
             Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(pageable.getSort().toString(),
                     pageable.getPageNumber(), pageable.getPageSize(), userId);
+
             venues.forEach(venue -> {
-                venue.setLeadCount(venue.getLeads().size());
-                venue.setLeadCountToday(venue.getLeadCountToday());
+                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedBy(venue.getVenueId(), userId);
+                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDate(venue.getVenueId(),
+                        userId, new Date());
+                venue.setLeadCount(leadCount);
+                venue.setLeadCountToday(leadCountToday);
             });
             ResponseEntity<Page<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<Page<Venue>> response = new ApiResponse<>();
@@ -105,8 +114,11 @@ public class VenueController {
         try {
             List<Venue> venues = venueService.searchVenues(query, userId);
             venues.forEach(venue -> {
-                venue.setLeadCount(venue.getLeads().size());
-                venue.setLeadCountToday(venue.getLeadCountToday());
+                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedBy(venue.getVenueId(), userId);
+                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDate(venue.getVenueId(),
+                        userId, new Date());
+                venue.setLeadCount(leadCount);
+                venue.setLeadCountToday(leadCountToday);
             });
             ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<List<Venue>> response = new ApiResponse<>();
@@ -130,10 +142,14 @@ public class VenueController {
             @RequestParam(name = "venueIds") List<Long> venueIds) {
 
         try {
+            String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
             List<Venue> venues = venueService.getVenuesByIds(venueIds);
             venues.forEach(venue -> {
-                venue.setLeadCount(venue.getLeads().size());
-                venue.setLeadCountToday(venue.getLeadCountToday());
+                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedBy(venue.getVenueId(), userId);
+                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDate(venue.getVenueId(),
+                        userId, new Date());
+                venue.setLeadCount(leadCount);
+                venue.setLeadCountToday(leadCountToday);
             });
             ApiResponse<List<Venue>> response = new ApiResponse<>();
             response.setStatusCode(200);

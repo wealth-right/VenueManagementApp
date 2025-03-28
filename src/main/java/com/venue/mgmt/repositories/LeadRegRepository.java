@@ -7,8 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +15,9 @@ import java.util.Optional;
 public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long> {
 
     Optional<LeadRegistration> findByLeadId(Long leadId);
+
+    int countByVenue_VenueIdAndCreatedBy(Long venueId, String createdBy);
+    int countByVenue_VenueIdAndCreatedByAndCreationDate(Long venueId, String createdBy, Date creationDate);
 
     @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId")
     Page<LeadRegistration> findAllByUserId(@Param("userId") String userId, Pageable pageable);

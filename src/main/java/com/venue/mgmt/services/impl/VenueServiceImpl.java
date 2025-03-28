@@ -112,7 +112,7 @@ public class VenueServiceImpl implements VenueService {
     }
 
     @Override
-    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {
+    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {// jo marketier ne add kia hai utna hi venue count dikhana hai leadCOunt me
         Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, "creationDate");
