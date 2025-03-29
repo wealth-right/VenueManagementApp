@@ -43,7 +43,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private final HttpServletRequest request;
 
-    public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository,UserMgmtResService userMgmtResService,HttpServletRequest request) {
+    public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService, HttpServletRequest request) {
         this.leadRegRepository = leadRegRepository;
         this.venueRepository = venueRepository;
         this.userMgmtResService = userMgmtResService;
@@ -54,31 +54,31 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     @Override
     @Transactional
     public LeadRegistration saveLead(LeadRegistration leadRegistration) {
-            Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
-                    .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
-            logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
-            // Save the lead registration
-            leadRegistration.setVenue(venue);
-            logger.info("Saving lead registration...");
-            return leadRegRepository.save(leadRegistration);
+        Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
+                .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
+        logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
+        // Save the lead registration
+        leadRegistration.setVenue(venue);
+        logger.info("Saving lead registration...");
+        return leadRegRepository.save(leadRegistration);
     }
 
 
     @Override
     @Transactional(readOnly = true)
     public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndIsDeletedFalse(String sortDirection, int page, int size, String userId) {
-            Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
-            Sort sort = Sort.by(direction, "creationDate");
-            Pageable pageable = PageRequest.of(page, size, sort);
-            return leadRegRepository.findAllByUserIdAndIsDeletedFalse(userId,pageable);
-        }
+        Sort sort = Sort.by(direction, "creationDate");
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return leadRegRepository.findAllByUserIdAndIsDeletedFalse(userId, pageable);
+    }
 
     @Override
     public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRangeAndIsDeletedFalse(String sortDirection, int page,
                                                                                                                      int size, String userId, Long venueId,
                                                                                                                      Date startDate, Date endDate) {
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort.Direction direction = sortDirection.contains("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, "creationDate");
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -108,108 +108,108 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId) {
+    public List<LeadRegistration> simpleSearchLeads(String searchTerm, String userId) {
 
-            if (searchTerm == null || searchTerm.trim().isEmpty()) {
-                return getAllLeadsSortedByCreationDateAndCreatedByAndIsDeletedFalse("desc", 0, Integer.MAX_VALUE,userId).getContent();
-            }
-            return leadRegRepository.searchLeads(searchTerm,userId);
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return getAllLeadsSortedByCreationDateAndCreatedByAndIsDeletedFalse("desc", 0, Integer.MAX_VALUE, userId).getContent();
+        }
+        return leadRegRepository.searchLeads(searchTerm, userId);
     }
 
     @Override
     @Transactional
-    public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead,String authHeader) {
-            LeadRegistration existingLead = leadRegRepository.findById(leadId)
+    public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead, String authHeader) {
+        LeadRegistration existingLead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-            String userId = request.getAttribute(USER_ID).toString();
-            persistCustomerDetails(userId,existingLead.getCustomerId(), updatedLead,authHeader);
-            // Update the fields
-            existingLead.setFullName(updatedLead.getFullName());
-            existingLead.setEmail(updatedLead.getEmail());
-            existingLead.setMobileNumber(updatedLead.getMobileNumber());
-            existingLead.setStatus(updatedLead.getStatus());
-            existingLead.setActive(true);
-            existingLead.setLastModifiedBy(updatedLead.getLastModifiedBy());
-            existingLead.setLastModifiedDate(updatedLead.getLastModifiedDate());
-            existingLead.setMaritalStatus(updatedLead.getMaritalStatus());
-            existingLead.setAge(updatedLead.getAge());
-            existingLead.setOccupation(updatedLead.getOccupation());
-            existingLead.setIncomeRange(updatedLead.getIncomeRange());
-            existingLead.setDob(updatedLead.getDob());
-            existingLead.setGender(updatedLead.getGender());
-            existingLead.setPinCode(updatedLead.getPinCode());
-            existingLead.setAddress(updatedLead.getAddress());
-            existingLead.setLineOfBusiness(updatedLead.getLineOfBusiness());
-            existingLead.setLifeStage(updatedLead.getLifeStage());
-            existingLead.setVenue(updatedLead.getVenue());
-            existingLead.setActive(updatedLead.getActive());
-            existingLead.setRemarks(updatedLead.getRemarks());
-            existingLead.setExistingProducts(updatedLead.getExistingProducts());
+        String userId = request.getAttribute(USER_ID).toString();
+        persistCustomerDetails(userId, existingLead.getCustomerId(), updatedLead, authHeader);
+        // Update the fields
+        existingLead.setFullName(updatedLead.getFullName());
+        existingLead.setEmail(updatedLead.getEmail());
+        existingLead.setMobileNumber(updatedLead.getMobileNumber());
+        existingLead.setStatus(updatedLead.getStatus());
+        existingLead.setActive(true);
+        existingLead.setLastModifiedBy(updatedLead.getLastModifiedBy());
+        existingLead.setLastModifiedDate(updatedLead.getLastModifiedDate());
+        existingLead.setMaritalStatus(updatedLead.getMaritalStatus());
+        existingLead.setAge(updatedLead.getAge());
+        existingLead.setOccupation(updatedLead.getOccupation());
+        existingLead.setIncomeRange(updatedLead.getIncomeRange());
+        existingLead.setDob(updatedLead.getDob());
+        existingLead.setGender(updatedLead.getGender());
+        existingLead.setPinCode(updatedLead.getPinCode());
+        existingLead.setAddress(updatedLead.getAddress());
+        existingLead.setLineOfBusiness(updatedLead.getLineOfBusiness());
+        existingLead.setLifeStage(updatedLead.getLifeStage());
+        existingLead.setVenue(updatedLead.getVenue());
+        existingLead.setActive(updatedLead.getActive());
+        existingLead.setRemarks(updatedLead.getRemarks());
+        existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
 
-            LeadRegistration savedLead = leadRegRepository.save(existingLead);
-            logger.info("Updated lead with ID: {}", savedLead.getLeadId());
-            return savedLead;
-        }
+        LeadRegistration savedLead = leadRegRepository.save(existingLead);
+        logger.info("Updated lead with ID: {}", savedLead.getLeadId());
+        return savedLead;
+    }
 
     private void persistCustomerDetails(String userId, String customerId,
-                                        LeadRegistration leadRegistration,String authHeader) {
+                                        LeadRegistration leadRegistration, String authHeader) {
         // Fetch user details from the API
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
         if (userMasterDetails == null) {
             return;
         }
         CustomerRequest customerRequest = userMgmtResService.getCustomerDetails(customerId);
+        CustomerRequest custRequest = new CustomerRequest();
         if (customerRequest == null) {
             logger.error("Customer not found with ID: {}", customerId);
             return;
         }
         // Create CustomerRequest object
         if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
-            customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
-            customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
-            customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
+            custRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
+            custRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
+            custRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
         }
-        customerRequest.setFullname(leadRegistration.getFullName());
-        customerRequest.setEmailid(leadRegistration.getEmail());
-        customerRequest.setCountrycode("+91");
-        customerRequest.setMobileno(leadRegistration.getMobileNumber());
-        customerRequest.setAddedUpdatedBy(userId);
-        customerRequest.setAssignedto(userId);
+        custRequest.setFullname(leadRegistration.getFullName());
+        custRequest.setMobileno(leadRegistration.getMobileNumber());
+        custRequest.setEmailid(leadRegistration.getEmail());
+        custRequest.setCountrycode("+91");
+        custRequest.setCustomerId(customerId);
+        custRequest.setAddedUpdatedBy(userId);
+        custRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
-            customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
+            custRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
-                customerRequest.setTitle("Mr.");
+                custRequest.setTitle("Mr.");
             } else if (leadRegistration.getGender().equalsIgnoreCase("Female") &&
-                    leadRegistration.getMaritalStatus() != null
-                    && (!leadRegistration.getMaritalStatus().isEmpty())
-                    && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
-                customerRequest.setTitle("Mrs.");
+                    leadRegistration.getMaritalStatus() != null && (!leadRegistration.getMaritalStatus().isEmpty()) && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
+                custRequest.setTitle("Mrs.");
             } else {
-                customerRequest.setTitle("Miss.");
+                custRequest.setTitle("Miss.");
             }
         }
-        customerRequest.setOccupation("01");
-        customerRequest.setTaxStatus("01");
-        customerRequest.setCountryOfResidence("India");
-        customerRequest.setSource("QuickTapApp");
-        customerRequest.setCustomertype("Prospect");
-        customerRequest.setChannelcode(userMasterDetails.getChannelCode());
-        customerRequest.setBranchCode(userMasterDetails.getBranchCode());
+        custRequest.setOccupation("01");
+        custRequest.setTaxStatus("01");
+        custRequest.setCountryOfResidence("India");
+        custRequest.setSource("QuickTapApp");
+        custRequest.setCustomertype("Prospect");
+        custRequest.setChannelcode(userMasterDetails.getChannelCode());
+        custRequest.setBranchCode(userMasterDetails.getBranchCode());
         // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        customerServiceClient.saveCustomerData(customerRequest,authHeader);
+        customerServiceClient.saveCustomerData(custRequest, authHeader);
     }
 
     @Override
     @Transactional
     public void deleteLead(Long leadId) {
-            LeadRegistration lead = leadRegRepository.findById(leadId)
+        LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
-            lead.setDeleted(true);
-            lead.setActive(false);
-            leadRegRepository.save(lead);
-            logger.info("Marked lead with ID: {} as deleted", leadId);
+        lead.setDeleted(true);
+        lead.setActive(false);
+        leadRegRepository.save(lead);
+        logger.info("Marked lead with ID: {} as deleted", leadId);
     }
 
 }

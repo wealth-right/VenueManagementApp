@@ -5,7 +5,6 @@ import com.venue.mgmt.request.UserMasterRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Map;
 @Service
@@ -75,6 +74,7 @@ public class UserMgmtResService {
             customerRequest.setTaxStatus(rs.getString("taxStatus"));
             customerRequest.setCountryOfResidence(rs.getString("countryOfResidence"));
             customerRequest.setSource(rs.getString("source"));
+            customerRequest.setCustomerId(rs.getString("customerid"));
             customerRequest.setCustomertype(rs.getString("customertype"));
             customerRequest.setChannelcode(rs.getString("channelcode"));
             customerRequest.setBranchCode(rs.getString("branchcode"));

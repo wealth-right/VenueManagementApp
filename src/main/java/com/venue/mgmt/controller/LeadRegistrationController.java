@@ -1,7 +1,6 @@
 package com.venue.mgmt.controller;
 
 import com.venue.mgmt.dto.LeadWithVenueDetails;
-import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
@@ -175,6 +174,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setEmail(lead.getEmail());
                         leadWithVenueDetails.setPinCode(lead.getPinCode());
                         leadWithVenueDetails.setActive(lead.getActive());
+                        leadWithVenueDetails.setPinCode(lead.getPinCode());
                         leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
                         leadWithVenueDetails.setVerified(lead.getVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
