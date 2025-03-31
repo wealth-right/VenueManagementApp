@@ -1,7 +1,6 @@
 package com.venue.mgmt.controller;
 
 import com.venue.mgmt.dto.LeadWithVenueDetails;
-import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
@@ -92,12 +91,6 @@ public class LeadRegistrationController {
 
     private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
         // Fetch user details from the API
-        CustomerServiceClient custServiceClient = new CustomerServiceClient(new RestTemplate());
-//        UserDetailsResponse.UserDetails userDetails = custServiceClient.getUserDetails(userId);
-//        if (userDetails.getUserId() == null) {
-//
-//            return null;
-//        }
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
         if(userMasterDetails == null){
             return null;
@@ -181,6 +174,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setEmail(lead.getEmail());
                         leadWithVenueDetails.setPinCode(lead.getPinCode());
                         leadWithVenueDetails.setActive(lead.getActive());
+                        leadWithVenueDetails.setPinCode(lead.getPinCode());
                         leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
                         leadWithVenueDetails.setVerified(lead.getVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
