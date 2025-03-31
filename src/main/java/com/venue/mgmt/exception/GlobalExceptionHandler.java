@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
 import java.nio.file.AccessDeniedException;
@@ -56,6 +57,10 @@ public class GlobalExceptionHandler {
                 message = jsonObject.getString("errorMsg");
             }
         }
+        else if(ex instanceof HttpServerErrorException.BadGateway) {
+            status = HttpStatus.BAD_GATEWAY;
+            message = "Bad Gateway";
+        }
         else if (ex instanceof HttpStatusException httpEx) {
             status = httpEx.getCode();
             message = (httpEx.getReason() != null && !httpEx.getReason().isEmpty())
@@ -71,11 +76,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(status, "Internal Server Error", message);
     }
 
-
-
-
-
-
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<Map<String, Object>> handleAlreadyExistsException(AlreadyExistsException ex) {
@@ -87,9 +87,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleInvalidOtpException(InvalidOtpException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "Invalid OTP", ex.getMessage());
     }
-
-
-
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequestException(BadRequestException ex) {

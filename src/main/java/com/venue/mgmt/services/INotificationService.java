@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 public interface INotificationService {
     ValidateUserResponse sendOtpOnNumber(LoginRequest loginReq) throws JsonProcessingException;
 
-    ResponseEntity<String> validateOtp(VerifyUserOtpRequest verifyRequest);
+    ResponseEntity<String> validateOtp(VerifyUserOtpRequest verifyRequest) throws JsonProcessingException;
 
 
 

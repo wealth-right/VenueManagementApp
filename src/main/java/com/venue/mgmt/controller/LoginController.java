@@ -40,7 +40,7 @@ public class LoginController {
     @PostMapping(value = "/verify-otp",
                 consumes = MediaType.APPLICATION_JSON_VALUE,
                 produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> verifyOtp(@RequestBody @Valid VerifyUserOtpRequest verifyRequest) {
+    public ResponseEntity<String> verifyOtp(@RequestBody @Valid VerifyUserOtpRequest verifyRequest) throws JsonProcessingException {
         logger.info("LoginController - Inside verifyOtp method");
         return  notificationService.validateOtp(verifyRequest);
     }

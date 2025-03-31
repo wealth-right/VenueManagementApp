@@ -38,7 +38,7 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
-    public ValidateUserResponse sendOtpOnNumber(LoginRequest loginReq) throws JsonProcessingException,HttpClientErrorException {
+    public ValidateUserResponse sendOtpOnNumber(LoginRequest loginReq) throws JsonProcessingException {
         logger.info("NotificationServiceImpl - Inside sendOtpOnNumber method");
 
             // Call new ValidateUser API
@@ -49,34 +49,25 @@ public class NotificationServiceImpl implements INotificationService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<LoginRequest> entity = new HttpEntity<>(loginRequest, headers);
-
             // Debug log the request
             ObjectMapper mapper = new ObjectMapper();
             logger.info("Request body: {}", mapper.writeValueAsString(loginRequest));
 
              ResponseEntity<String> rawResponse = restTemplate.exchange(
-                    "https://api-uat.wealth-right.com/api/ValidateUser",
+                    "https://api.dev.wealth-right.com/api/ValidateUser",
                     HttpMethod.POST,
                     entity,
                     String.class
             );
-
             // Log raw response for debugging
             logger.info("Raw API Response: {}", rawResponse.getBody());
-
-            ValidateUserResponse validateUserResponse = mapper.readValue(rawResponse.getBody(), ValidateUserResponse.class);
-            
+            return mapper.readValue(rawResponse.getBody(), ValidateUserResponse.class);
             // Check if the API returned an error
-
-            return validateUserResponse;
-
     }
 
     @Override
-    public ResponseEntity<String> validateOtp(VerifyUserOtpRequest verifyRequest) {
+    public ResponseEntity<String> validateOtp(VerifyUserOtpRequest verifyRequest) throws JsonProcessingException {
         logger.info("NotificationServiceImpl - Inside validateOtp method");
-
-        try {
             // Set default OTP screen if not provided
             if (verifyRequest.getOtpScreen() == null) {
                 verifyRequest.setOtpScreen("APP");
@@ -100,7 +91,7 @@ public class NotificationServiceImpl implements INotificationService {
 
             // Make API call and return raw response
             ResponseEntity<String> rawResponse = restTemplate.exchange(
-                    "https://api-uat.wealth-right.com/api/verifyuserotp",
+                    "https://api.dev.wealth-right.com/api/verifyuserotp",
                     HttpMethod.POST,
                     entity,
                     String.class
@@ -113,13 +104,14 @@ public class NotificationServiceImpl implements INotificationService {
             // Extract branchCode from userMaster
             Map<String, Object> userMaster = (Map<String, Object>) responseBody.get("response");
             Map<String, Object> userMasterDetails = (Map<String, Object>) userMaster.get("userMaster");
-
             String branchCode = (String) userMasterDetails.get("branchcode");
-
             // Get branch details from other schema
             Map<String, Object> branchDetails=null;
             if(branchCode!=null) {
-                branchDetails = userMgmtResService.getDataFromOtherSchema(branchCode).get(0);
+                List<Map<String, Object>> otherSchema = userMgmtResService.getDataFromOtherSchema(branchCode);
+                if (otherSchema != null && !otherSchema.isEmpty()) {
+                    branchDetails = otherSchema.get(0);
+                }
             }
             // Add branch details to the response
             userMaster.put("branchDetails", branchDetails);
@@ -134,21 +126,5 @@ public class NotificationServiceImpl implements INotificationService {
             return ResponseEntity.status(rawResponse.getStatusCode())
                                .contentType(MediaType.APPLICATION_JSON)
                                .body(modifiedResponseBody);
-
-        } catch (HttpClientErrorException e) {
-            logger.error("HTTP Client Error while verifying OTP: {}", e.getMessage());
-            return ResponseEntity.status(e.getStatusCode())
-                               .contentType(MediaType.APPLICATION_JSON)
-                               .body(e.getResponseBodyAsString());
-        } catch (Exception exception) {
-            logger.error("Exception while verifying OTP : ", exception);
-            String errorJson = String.format(
-                "{\"statusCode\":500,\"statusMsg\":\"Failed\",\"errorMsg\":\"%s\",\"response\":null}",
-                exception.getMessage()
-            );
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                               .contentType(MediaType.APPLICATION_JSON)
-                               .body(errorJson);
-        }
     }
 }
