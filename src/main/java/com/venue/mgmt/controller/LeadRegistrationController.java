@@ -12,6 +12,7 @@ import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
+import com.venue.mgmt.services.impl.utils.OccupationCodesUtil;
 import com.venue.mgmt.util.CommonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -121,7 +122,8 @@ public class LeadRegistrationController {
                 customerRequest.setTitle("Miss.");
             }
         }
-        customerRequest.setOccupation("01");
+        String occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        customerRequest.setOccupation(occupation);
         customerRequest.setTaxStatus("01");
         customerRequest.setCountryOfResidence("India");
         customerRequest.setSource("QuickTapApp");

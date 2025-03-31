@@ -1,6 +1,5 @@
 package com.venue.mgmt.services.impl;
 
-import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
@@ -10,6 +9,7 @@ import com.venue.mgmt.request.CustomerServiceClient;
 import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
+import com.venue.mgmt.services.impl.utils.OccupationCodesUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -189,7 +189,8 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                 custRequest.setTitle("Miss.");
             }
         }
-        custRequest.setOccupation("01");
+        String occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        custRequest.setOccupation(occupation);
         custRequest.setTaxStatus("01");
         custRequest.setCountryOfResidence("India");
         custRequest.setSource("QuickTapApp");
