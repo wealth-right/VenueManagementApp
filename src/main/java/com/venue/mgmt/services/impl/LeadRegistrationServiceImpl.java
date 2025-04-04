@@ -41,6 +41,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final UserMgmtResService userMgmtResService;
 
 
+
     private final HttpServletRequest request;
 
     public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService, HttpServletRequest request) {
@@ -48,7 +49,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         this.venueRepository = venueRepository;
         this.userMgmtResService = userMgmtResService;
         this.request = request;
-
     }
 
     @Override
@@ -177,7 +177,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         custRequest.setCountrycode("+91");
         custRequest.setCustomerId(customerId);
         custRequest.setAddedUpdatedBy(userId);
-        custRequest.setAssignedto(userId);
+//        custRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             custRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
@@ -189,7 +189,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                 custRequest.setTitle("Miss.");
             }
         }
-        String occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        String occupation = null;
+        if(leadRegistration.getOccupation()!=null && (!leadRegistration.getOccupation().isEmpty())){
+            occupation=OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        }
         custRequest.setOccupation(occupation);
         custRequest.setTaxStatus("01");
         custRequest.setCountryOfResidence("India");
@@ -204,9 +207,12 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     @Override
     @Transactional
-    public void deleteLead(Long leadId) {
+    public void deleteLead(Long leadId,String authHeader) {
         LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
+        CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
+        String customerId = lead.getCustomerId();
+        customerServiceClient.deleteCustomer(customerId,authHeader);
         lead.setDeleted(true);
         lead.setActive(false);
         leadRegRepository.save(lead);

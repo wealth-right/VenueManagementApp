@@ -15,8 +15,8 @@ import java.util.Optional;
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     Optional<Venue> findByVenueId(Long venueId);
 
-    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venue v " +
-            "LEFT JOIN lead_registration l ON v.venue_id = l.venue_id " +
+    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM leadmgmt.venue v " +
+            "LEFT JOIN leadmgmt.lead_registration l ON v.venue_id = l.venue_id " +
             "WHERE v.is_active = true " +
             "AND v.created_by = :userId " +
             "AND (:searchTerm IS NULL OR TRIM(:searchTerm) = '' OR " +
@@ -27,13 +27,19 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
             nativeQuery = true)
     List<Venue> searchVenues(@Param("searchTerm") String searchTerm, @Param("userId") String userId);
 
-    @Query(value = "SELECT * FROM venue " +
-            "ORDER BY point(longitude, latitude) <-> point(:userLong, :userLat) " +
-            ":sortDirection", nativeQuery = true)
-    Page<Venue> findAllVenueByDistance(
-            @Param("userLat") Double userLat,
-            @Param("userLong") Double userLong,
-            @Param("sortDirection") String sortDirection,
-            Pageable pageable);
+
+
+    @Query(value = "SELECT *, " +
+            "(6371 * acos(cos(radians(:lat)) * cos(radians(l.latitude)) * " +
+            "cos(radians(l.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(l.latitude)))) AS distance " +
+            "FROM venue l " +
+            "ORDER BY l.creation_date DESC",
+            countQuery = "SELECT count(*) FROM venue l",
+            nativeQuery = true)
+    Page<Venue> findNearestLocations(@Param("lat") double latitude,
+                                     @Param("lng") double longitude,
+                                     Pageable pageable);
+
 
 }

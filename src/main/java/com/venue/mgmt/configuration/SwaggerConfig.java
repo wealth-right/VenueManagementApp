@@ -28,17 +28,25 @@ public class SwaggerConfig {
                 .url("http://34.8.162.251/api")
                 .description("Production Server");
 
+        Server uatServer = new Server()
+                .url("https://sit-services.wealth-right.com/api/venue")
+                .description("UAT Server");
+
         // Configure local development server
         Server localServer = new Server()
-                .url("http://localhost:8081/api")
+                .url("http://localhost:8080/api/venue")
                 .description("Local Server");
+
+        Server devServer = new Server()
+                .url("http://localhost:8081/api")
+                .description("Dev Server");
 
         // Define security scheme name
         final String securitySchemeName = "bearerAuth";
 
         return new OpenAPI()
                 // Configure servers
-                .servers(List.of(localServer,productionServer))
+                .servers(List.of(localServer,productionServer,uatServer,devServer))
 
                 // Add security requirement
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

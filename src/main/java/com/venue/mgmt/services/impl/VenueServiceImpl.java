@@ -106,20 +106,19 @@ public class VenueServiceImpl implements VenueService {
     }
 
 
-    @Override
-    public Page<Venue> getAllVenuesSorted(String sortBy, String sortDirection, Double latitude, Double longitude, int page, int size) {
-        return venueRepository.findAllVenueByDistance(latitude, longitude, sortDirection, PageRequest.of(page, size));
+
+    public Page<Venue> getAllVenuesSortedByDistance(String sortDirection, Double latitude, Double longitude, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return venueRepository.findNearestLocations(latitude, longitude, pageable);
     }
 
     @Override
-    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {// jo marketier ne add kia hai utna hi venue count dikhana hai leadCOunt me
+    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, "creationDate");
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Venue> venues = venueRepository.findAll(pageable);
-        venues.forEach(venue -> venue.setLeadCount(venue.getLeads().size()));
-        return venues;
+        return venueRepository.findAll(pageable);
     }
 
 }

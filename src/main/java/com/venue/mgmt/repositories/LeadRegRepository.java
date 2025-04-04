@@ -16,8 +16,11 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
 
     Optional<LeadRegistration> findByLeadId(Long leadId);
 
-    int countByVenue_VenueIdAndCreatedBy(Long venueId, String createdBy);
-    int countByVenue_VenueIdAndCreatedByAndCreationDate(Long venueId, String createdBy, Date creationDate);
+    int countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(Long venueId, String createdBy);
+
+//    @Query(" select count(lr1_0.leadId)  from LeadRegistration lr1_0 left join " +
+//            "Venue v1_0 on v1_0.venueId=lr1_0.venue.venueId where  v1_0.venueId=:venueId and lr1_0.createdBy=:createdBy and lr1_0.creationDate between :startDate and :endDate and lr1_0.isDeleted=false")
+    int countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(Long venueId,String createdBy,Date startDate);
 
     @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndIsDeletedFalse(@Param("userId") String userId, Pageable pageable);
@@ -46,7 +49,7 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
                                                                           @Param("venueId") Long venueId,
                                                                           @Param("endDate") Date endDate, Pageable pageable);
     
-    @Query(value = "SELECT * FROM lead_registration l " +
+    @Query(value = "SELECT * FROM leadmgmt.lead_registration l " +
            "WHERE l.is_active = true " +
             "AND l.created_by=:userId "+
             "AND l.is_deleted = false " +
@@ -58,4 +61,11 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
            "ORDER BY l.creation_date DESC", 
            nativeQuery = true)
     List<LeadRegistration> searchLeads(@Param("searchTerm") String searchTerm, @Param("userId") String userId);
+
+    @Query("select l from LeadRegistration l where l.venue.venueId=:venueId  " +
+            "and l.createdBy=:userId")
+    List<LeadRegistration> findByVenueIdAndCreated_by(@Param("venueId") Long venueId, @Param("userId") String userId);
+
+    @Query("select l from LeadRegistration l where l.venue.venueId=:venueId and l.isDeleted=false and l.createdBy=:userId")
+    List<LeadRegistration> findByVenueIdAndIsDeletedFalseAndCreatedBy(@Param("venueId") Long venueId, @Param("userId") String userId);
 }

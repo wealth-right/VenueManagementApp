@@ -10,10 +10,9 @@ import com.venue.mgmt.services.INotificationService;
 import com.venue.mgmt.services.UserMgmtResService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -24,6 +23,10 @@ import java.util.Map;
 public class NotificationServiceImpl implements INotificationService {
 
     private static final Logger logger = LogManager.getLogger(NotificationServiceImpl.class);
+
+    String sendOtpUrl="https://api-uat.wealth-right.com/api/ValidateUser";
+
+    String validateOtpUrl="https://api-uat.wealth-right.com/api/verifyuserotp";
 
     private final LeadRegRepository leadRegRepository;
 
@@ -54,7 +57,7 @@ public class NotificationServiceImpl implements INotificationService {
             logger.info("Request body: {}", mapper.writeValueAsString(loginRequest));
 
              ResponseEntity<String> rawResponse = restTemplate.exchange(
-                    "https://api.dev.wealth-right.com/api/ValidateUser",
+                     sendOtpUrl,
                     HttpMethod.POST,
                     entity,
                     String.class
@@ -91,7 +94,7 @@ public class NotificationServiceImpl implements INotificationService {
 
             // Make API call and return raw response
             ResponseEntity<String> rawResponse = restTemplate.exchange(
-                    "https://api.dev.wealth-right.com/api/verifyuserotp",
+                    validateOtpUrl,
                     HttpMethod.POST,
                     entity,
                     String.class

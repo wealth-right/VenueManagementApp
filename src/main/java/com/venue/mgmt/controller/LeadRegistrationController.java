@@ -73,6 +73,8 @@ public class LeadRegistrationController {
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) {
+
+            logger.info("{}", leadRegistration);
             String userId = request.getAttribute(USER_ID).toString();
             // Create CustomerRequest object
             String customerDetails = persistCustomerDetails(userId, leadRegistration,authHeader);
@@ -91,12 +93,10 @@ public class LeadRegistrationController {
     }
 
     private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
-        // Fetch user details from the API
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
         if(userMasterDetails == null){
             return null;
         }
-        // Create CustomerRequest object
         CustomerRequest customerRequest = new CustomerRequest();
         if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
             customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
@@ -108,7 +108,6 @@ public class LeadRegistrationController {
         customerRequest.setCountrycode("+91");
         customerRequest.setMobileno(leadRegistration.getMobileNumber());
         customerRequest.setAddedUpdatedBy(userId);
-        customerRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
@@ -122,7 +121,10 @@ public class LeadRegistrationController {
                 customerRequest.setTitle("Miss.");
             }
         }
-        String occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        String occupation=null;
+        if(leadRegistration.getOccupation()!=null && (!leadRegistration.getOccupation().isEmpty())){
+            occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        }
         customerRequest.setOccupation(occupation);
         customerRequest.setTaxStatus("01");
         customerRequest.setCountryOfResidence("India");
@@ -130,7 +132,6 @@ public class LeadRegistrationController {
         customerRequest.setCustomertype("Prospect");
         customerRequest.setChannelcode(userMasterDetails.getChannelCode());
         customerRequest.setBranchCode(userMasterDetails.getBranchCode());
-        // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
         return entity.getBody();
@@ -282,6 +283,7 @@ public class LeadRegistrationController {
             @RequestHeader(name = "Authorization") String authHeader,
             @PathVariable Long leadId,
             @Valid @RequestBody LeadRegistration leadRegistration)  {
+        logger.info("{}",leadRegistration);
         logger.info("VenueManagementApp - Inside update Lead Method for leadId: {}", leadId);
             LeadRegistration updatedLead = leadRegistrationService.updateLead(leadId, leadRegistration,authHeader);
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
@@ -298,10 +300,9 @@ public class LeadRegistrationController {
     public ResponseEntity<Void> deleteLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @PathVariable Long leadId) {
-
         logger.info("VenueManagementApp - Inside delete Lead Method for leadId: {}", leadId);
         try {
-            leadRegistrationService.deleteLead(leadId);
+            leadRegistrationService.deleteLead(leadId,authHeader);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             logger.error("Error deleting lead: {}", e.getMessage());

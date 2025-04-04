@@ -6,8 +6,6 @@ import com.venue.mgmt.enums.ProductType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
