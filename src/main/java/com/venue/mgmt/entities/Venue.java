@@ -20,7 +20,7 @@ import java.util.List;
 @Setter
 @ToString
 @Entity
-@Table(name = "venue", schema = "leadmgmt")
+@Table(name = "venue", schema = "venuemgmt")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Venue extends Auditable<String> {
 

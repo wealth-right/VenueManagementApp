@@ -1,14 +1,14 @@
 package com.venue.mgmt.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.constant.GeneralMsgConstants;
+import com.venue.mgmt.dto.VenueDTO;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
-import com.venue.mgmt.response.ApiResponse;
-import com.venue.mgmt.response.PaginationDetails;
-import com.venue.mgmt.response.VenueResponse;
+import com.venue.mgmt.response.*;
 import com.venue.mgmt.services.GooglePlacesService;
 import com.venue.mgmt.services.VenueService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,16 +74,31 @@ public class VenueController {
         }
     }
 
-    @GetMapping("/findPlace")
-    public ResponseEntity<VenueResponse<Venue>> findPlace(@RequestParam String input) throws JsonProcessingException {
-        Venue venue = googleMapsService.findPlaceFromText(input);
-        Venue savedVenue = venueService.saveVenue(venue);
-        VenueResponse<Venue> response = new VenueResponse<>();
-        response.setStatusCode(200);
-        response.setStatusMsg(GeneralMsgConstants.SUCCESS);
-        response.setErrorMsg(null);
-        response.setResponse(savedVenue);
-        return ResponseEntity.ok(response);
+    @GetMapping("/text-search")
+    public ResponseEntity<GoogleMapResponse<VenueSearchResponse>> textSearch(
+            @RequestParam String query,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Integer radius) {
+        try {
+            StringBuilder nextPageToken = new StringBuilder();
+            List<VenueDTO> searchResult = googleMapsService.textSearch(query, location, radius, nextPageToken);
+            VenueSearchResponse venueSearchResponse = new VenueSearchResponse();
+            venueSearchResponse.setVenues(searchResult);
+            venueSearchResponse.setNextPageToken(nextPageToken.toString());
+            GoogleMapResponse<VenueSearchResponse> response = new GoogleMapResponse<>();
+            response.setStatusCode(200);
+            response.setStatusMsg("Success");
+            response.setErrorMsg(null);
+            response.setResponse(venueSearchResponse);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            GoogleMapResponse<VenueSearchResponse> response = new GoogleMapResponse<>();
+            response.setStatusCode(500);
+            response.setStatusMsg("Error while performing text search");
+            response.setErrorMsg(e.getMessage());
+            response.setResponse(null);
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
 
@@ -138,20 +153,32 @@ public class VenueController {
         }
     }
 
-
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Venue>>> searchVenues(
             @RequestParam(required = false) String query) {
         String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
         try {
             List<Venue> venues = venueService.searchVenues(query, userId);
-            venues.forEach(venue -> {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(venue.getVenueId(), userId);
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(venue.getVenueId(),
-                        userId,new Date());
+            int leadCount = 0;
+            int leadCountToday=0;
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            Date today = calendar.getTime();
+            for (Venue venue : venues) {
+                List<LeadRegistration> totLeads = leadRegRepository.findByVenueIdAndIsDeletedFalseAndCreatedBy(venue.getVenueId(),userId);
+                for(LeadRegistration leads:totLeads){
+                    if(!(leads.getCreatedBy().isEmpty()) && leads.getCreatedBy().equalsIgnoreCase(userId)){
+                        leadCount+=1;
+                        if (leads.getCreationDate().after(today)) {
+                            leadCountToday+=1;
+                        }
+                    }
+                }
                 venue.setLeadCount(leadCount);
                 venue.setLeadCountToday(leadCountToday);
-            });
+            }
             ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<List<Venue>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
@@ -168,21 +195,32 @@ public class VenueController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
     @GetMapping("/details")
     public ResponseEntity<ApiResponse<List<Venue>>> getVenueDetailsByIds(
             @RequestParam(name = "venueIds") List<Long> venueIds) {
-
         try {
             String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
             List<Venue> venues = venueService.getVenuesByIds(venueIds);
-            venues.forEach(venue -> {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(venue.getVenueId(), userId);
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(venue.getVenueId(),
-                        userId,new Date());
+            int leadCount = 0;
+            int leadCountToday=0;
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            Date today = calendar.getTime();
+            for (Venue venue : venues) {
+                List<LeadRegistration> totLeads = leadRegRepository.findByVenueIdAndIsDeletedFalseAndCreatedBy(venue.getVenueId(),userId);
+                for(LeadRegistration leads:totLeads){
+                    if(!(leads.getCreatedBy().isEmpty()) && leads.getCreatedBy().equalsIgnoreCase(userId)){
+                        leadCount+=1;
+                        if (leads.getCreationDate().after(today)) {
+                            leadCountToday+=1;
+                        }
+                    }
+                }
                 venue.setLeadCount(leadCount);
                 venue.setLeadCountToday(leadCountToday);
-            });
+            }
             ApiResponse<List<Venue>> response = new ApiResponse<>();
             response.setStatusCode(200);
             response.setStatusMsg(GeneralMsgConstants.SUCCESS);
@@ -198,14 +236,6 @@ public class VenueController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
-
-    @PostMapping("/leads")
-    public ResponseEntity<Venue> addLeadToVenue(
-            @RequestBody LeadRegistration leadRegistration) {
-        return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration));
-    }
-
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(

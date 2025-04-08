@@ -15,8 +15,8 @@ import java.util.Optional;
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     Optional<Venue> findByVenueId(Long venueId);
 
-    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM leadmgmt.venue v " +
-            "LEFT JOIN leadmgmt.lead_registration l ON v.venue_id = l.venue_id " +
+    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venuemgmt.venue v " +
+            "LEFT JOIN venuemgmt.lead_registration l ON v.venue_id = l.venue_id " +
             "WHERE v.is_active = true " +
             "AND v.created_by = :userId " +
             "AND (:searchTerm IS NULL OR TRIM(:searchTerm) = '' OR " +

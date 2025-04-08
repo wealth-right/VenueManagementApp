@@ -14,7 +14,7 @@ import java.util.Set;
 
 @Entity
 @DynamicUpdate
-@Table(name = "lead_registration", schema = "leadmgmt")
+@Table(name = "lead_registration", schema = "venuemgmt")
 public class LeadRegistration extends Auditable<String> {
 
     @Id
