@@ -64,6 +64,35 @@ public class GooglePlacesService {
         return venues;
     }
 
+    public List<VenueDTO> textSearchWithToken(String nextPageToken, StringBuilder nextPageTokenBuilder) throws Exception {
+        String url = String.format("https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken=%s&key=%s",
+                nextPageToken, apiKey);
+
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(response.getBody());
+        JsonNode results = root.path("results");
+        String newNextPageToken = root.path("next_page_token").asText();
+        nextPageTokenBuilder.append(newNextPageToken);
+
+        List<VenueDTO> venues = new ArrayList<>();
+        if (results.isArray()) {
+            for (JsonNode result : results) {
+                VenueDTO venue = new VenueDTO();
+                venue.setVenueName(result.path("name").asText());
+                venue.setAddress(result.path("formatted_address").asText());
+                venue.setLatitude(result.path("geometry").path("location").path("lat").asDouble());
+                venue.setLongitude(result.path("geometry").path("location").path("lng").asDouble());
+                venues.add(venue);
+            }
+        }
+
+        return venues;
+    }
+
 
 
     public JsonNode geocodeAddress(String address) throws Exception {

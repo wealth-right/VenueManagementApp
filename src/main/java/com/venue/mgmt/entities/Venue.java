@@ -28,7 +28,7 @@ public class Venue extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "venue_seq")
-    @SequenceGenerator(name = "venue_seq", sequenceName = "venue_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "venue_seq", sequenceName = "venuemgmt.venue_id_seq", allocationSize = 1)
     @Column(name = "venue_id")
     Long venueId;
 
@@ -50,6 +50,21 @@ public class Venue extends Auditable<String> {
     @NotBlank(message = "Address is required")
     @Column(name = "address", nullable = false)
     String address;
+
+    @Column(name = "locality")
+    String locality;
+
+    @Column(name = "city")
+    String city;
+
+    @Column(name = "state")
+    String state;
+
+    @Column(name = "country")
+    String country;
+
+    @Column(name = "pincode")
+    String pinCode;
     //use the vector datatype instead of string
     //add the pincode as a new column
 

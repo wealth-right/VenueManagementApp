@@ -10,4 +10,5 @@ public class VenueDTO {
     private String venueName;
     private double latitude;
     private double longitude;
+
 }

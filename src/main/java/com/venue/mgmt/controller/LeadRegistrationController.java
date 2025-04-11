@@ -112,8 +112,7 @@ public class LeadRegistrationController {
             customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
                 customerRequest.setTitle("Mr.");
-            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") &&
-                    leadRegistration.getMaritalStatus() != null
+            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") && leadRegistration.getMaritalStatus() != null
                     && (!leadRegistration.getMaritalStatus().isEmpty())
                     && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
                 customerRequest.setTitle("Mrs.");

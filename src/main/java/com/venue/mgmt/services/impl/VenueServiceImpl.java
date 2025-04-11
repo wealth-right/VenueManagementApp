@@ -45,7 +45,7 @@ public class VenueServiceImpl implements VenueService {
             return venueRepository.save(venue);
         } catch (Exception e) {
             logger.error("Error saving venue: {}", e.getMessage());
-            throw new VenueNotSavedException("Failed to save venue"+e);
+            throw new VenueNotSavedException("Failed to save venue "+e);
         }
     }
 
@@ -78,10 +78,17 @@ public class VenueServiceImpl implements VenueService {
                     venue.setLatitude(updatedVenue.getLatitude());
                     venue.setLongitude(updatedVenue.getLongitude());
                     venue.setAddress(updatedVenue.getAddress());
+                    venue.setPinCode(updatedVenue.getPinCode());
+                    venue.setLocality(updatedVenue.getLocality());
+                    venue.setCity(updatedVenue.getCity());
+                    venue.setState(updatedVenue.getState());
+                    venue.setCountry(updatedVenue.getCountry());
                     return venueRepository.save(venue);
                 })
                 .orElseThrow(() -> new EntityNotFoundException(ErrorMsgConstants.VENUE_NOT_FOUND + venueId));
     }
+
+
 
     @Override
     @Transactional
