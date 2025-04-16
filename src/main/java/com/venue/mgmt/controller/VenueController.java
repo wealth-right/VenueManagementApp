@@ -1,13 +1,12 @@
 package com.venue.mgmt.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.venue.mgmt.constant.ErrorMsgConstants;
-import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 import com.venue.mgmt.dto.VenueDTO;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.response.*;
 import com.venue.mgmt.services.GooglePlacesService;
+import com.venue.mgmt.services.VenueFacadeService;
 import com.venue.mgmt.services.VenueService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -21,10 +20,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
+
+import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 
 @RestController
 @RequestMapping("/venue-app/v1/venues")
@@ -40,50 +38,27 @@ public class VenueController {
 
     private final GooglePlacesService googleMapsService;
 
+    private final VenueFacadeService venueFacadeService;
+
 
     public VenueController(VenueService venueService, HttpServletRequest request,LeadRegRepository leadRegRepository,
-                           GooglePlacesService googleMapsService) {
+                           GooglePlacesService googleMapsService,
+                           VenueFacadeService venueFacadeService){
         this.venueService = venueService;
         this.request = request;
         this.leadRegRepository = leadRegRepository;
         this.googleMapsService = googleMapsService;
+        this.venueFacadeService = venueFacadeService;
     }
 
     @PostMapping
     public ResponseEntity<VenueResponse<Venue>> createVenue(
             @Valid @RequestBody Venue venue) {
+        logger.info("VenueManagementApp - Inside create Venue Method");
 
         String userId = (String) request.getAttribute(USER_ID);
         try {
-                JsonNode geocodeResponse = googleMapsService.geocodeAddress(venue.getAddress());
-            if (geocodeResponse == null || !geocodeResponse.has("results") || geocodeResponse.path("results").isEmpty()) {
-                VenueResponse<Venue> response = new VenueResponse<>();
-                response.setStatusCode(400);
-                response.setStatusMsg(ErrorMsgConstants.INVALID_ADDRESS);
-                response.setErrorMsg(ErrorMsgConstants.GEOCODE_ERROR);
-                response.setResponse(null);
-                return ResponseEntity.badRequest().body(response);
-            }
-            JsonNode addressComponents = geocodeResponse.path("results").get(0).path("address_components");
-                for (JsonNode component : addressComponents) {
-                    List<String> types = new ArrayList<>();
-                    component.path("types").forEach(type -> types.add(type.asText()));
-                    if (types.contains(POSTAL_CODE)) {
-                        venue.setPinCode(component.path(LONG_NAME).asText());
-                    }
-                    if (types.contains(LOCALITY)) {
-                        venue.setCity(component.path(LONG_NAME).asText());
-                    }
-                    if( types.contains(SUB_LOCALITY)) {
-                        venue.setLocality(component.path(LONG_NAME).asText());
-                    }
-                    if (types.contains(STATE)) {
-                      venue.setState(component.path(LONG_NAME).asText());
-                    }
-                    if (types.contains(COUNTRY)) {
-                        venue.setCountry(component.path(LONG_NAME).asText());
-                    }
-                }
+            venueFacadeService.fetchAndSetAddressDetails(venue);
             venue.setCreatedBy(userId);
             Venue savedVenue = venueService.saveVenue(venue);
             VenueResponse<Venue> response = new VenueResponse<>();
@@ -111,11 +86,9 @@ public class VenueController {
         try {
             StringBuilder nextPageTokenBuilder = new StringBuilder();
             List<VenueDTO> searchResult;
-            // If nextPageToken is provided, fetch the next set of results
             if (nextPageToken != null && !nextPageToken.isEmpty()) {
                 searchResult = googleMapsService.textSearchWithToken(nextPageToken, nextPageTokenBuilder);
             } else {
-                // Otherwise, perform a new search
                 searchResult = googleMapsService.textSearch(query, location, radius, nextPageTokenBuilder);
             }
             VenueSearchResponse venueSearchResponse = new VenueSearchResponse();
@@ -140,28 +113,14 @@ public class VenueController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Venue>>> getAllVenues(
+            @RequestParam(value = "location", required = false) String location,
             @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
         logger.info("VenueManagementApp - Inside get All Venues Method");
         try {
             String userId = (String) request.getAttribute(USER_ID);
             pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
-            Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(pageable.getSort().toString(),
-                    pageable.getPageNumber(), pageable.getPageSize(), userId);
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            Date today = calendar.getTime();
-            for (Venue venue : venues) {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
-                        venue.getVenueId(), userId);
-                // Count today's leads
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
-                        venue.getVenueId(), userId, today);
-
-                venue.setLeadCount(leadCount);
-                venue.setLeadCountToday(leadCountToday);
-            }
+            Page<Venue> venues = venueFacadeService.getVenuesByLocationOrDefault(location, userId, pageable);
+            venueFacadeService.calculateTotalLeadsCount(venues.getContent(), userId, leadRegRepository);
             ResponseEntity<Page<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<Page<Venue>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
@@ -190,20 +149,7 @@ public class VenueController {
         String userId = (String) request.getAttribute(USER_ID);
         try {
             List<Venue> venues = venueService.searchVenues(query, userId);
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            Date today = calendar.getTime();
-            for (Venue venue : venues) {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
-                        venue.getVenueId(), userId);
-                // Count today's leads
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
-                        venue.getVenueId(), userId, today);
-                venue.setLeadCount(leadCount);
-                venue.setLeadCountToday(leadCountToday);
-            }
+           venueFacadeService.calculateTotalLeadsCount(venues, userId, leadRegRepository);
             ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<List<Venue>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
@@ -226,20 +172,7 @@ public class VenueController {
         try {
             String userId = (String) request.getAttribute(USER_ID);
             List<Venue> venues = venueService.getVenuesByIds(venueIds);
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            Date today = calendar.getTime();
-            for (Venue venue : venues) {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
-                        venue.getVenueId(), userId);
-                // Count today's leads
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
-                        venue.getVenueId(), userId, today);
-                venue.setLeadCount(leadCount);
-                venue.setLeadCountToday(leadCountToday);
-            }
+            venueFacadeService.calculateTotalLeadsCount(venues, userId, leadRegRepository);
             ApiResponse<List<Venue>> response = new ApiResponse<>();
             response.setStatusCode(OK);
             response.setStatusMsg(SUCCESS);
@@ -273,36 +206,7 @@ public class VenueController {
             @PathVariable Long venueId,
             @Valid @RequestBody Venue venue) {
         try {
-            // Call the geocoding API to extract address details
-            JsonNode geocodeResponse = googleMapsService.geocodeAddress(venue.getAddress());
-            if (geocodeResponse == null || !geocodeResponse.has("results") || geocodeResponse.path("results").isEmpty()) {
-                VenueResponse<Venue> response = new VenueResponse<>();
-                response.setStatusCode(400);
-                response.setStatusMsg(ErrorMsgConstants.INVALID_ADDRESS);
-                response.setErrorMsg(ErrorMsgConstants.GEOCODE_ERROR);
-                response.setResponse(null);
-                return ResponseEntity.badRequest().body(response);
-            }
-            JsonNode addressComponents = geocodeResponse.path("results").get(0).path("address_components");
-            for (JsonNode component : addressComponents) {
-                List<String> types = new ArrayList<>();
-                component.path("types").forEach(type -> types.add(type.asText()));
-                if (types.contains(POSTAL_CODE)) {
-                    venue.setPinCode(component.path(LONG_NAME).asText());
-                }
-                if (types.contains(LOCALITY)) {
-                    venue.setCity(component.path(LONG_NAME).asText());
-                }
-                if (types.contains(SUB_LOCALITY)) {
-                    venue.setLocality(component.path(LONG_NAME).asText());
-                }
-                if (types.contains(STATE)) {
-                    venue.setState(component.path(LONG_NAME).asText());
-                }
-                if (types.contains(COUNTRY)) {
-                    venue.setCountry(component.path(LONG_NAME).asText());
-                }
-            }
+           venueFacadeService.fetchAndSetAddressDetails(venue);
             // Update the venue in the database
             Venue updatedVenue = venueService.updateVenue(venueId, venue);
             VenueResponse<Venue> response = new VenueResponse<>();

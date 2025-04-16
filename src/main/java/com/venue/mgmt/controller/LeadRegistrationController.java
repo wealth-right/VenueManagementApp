@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
@@ -70,10 +71,11 @@ public class LeadRegistrationController {
 
     @PostMapping
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
+//    @Transactional
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) {
-
+            logger.info("VenueManagementApp - Inside create Lead Method");
             logger.info("{}", leadRegistration);
             String userId = request.getAttribute(USER_ID).toString();
             // Create CustomerRequest object
@@ -93,6 +95,7 @@ public class LeadRegistrationController {
     }
 
     private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
+        logger.info("VenueManagementApp - Inside persistCustomerDetails Method");
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
         if(userMasterDetails == null){
             return null;

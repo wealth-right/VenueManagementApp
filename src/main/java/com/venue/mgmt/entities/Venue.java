@@ -28,7 +28,7 @@ public class Venue extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "venue_seq")
-    @SequenceGenerator(name = "venue_seq", sequenceName = "venuemgmt.venue_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "venue_seq", sequenceName = "venue_id_seq", allocationSize = 1, initialValue =30)
     @Column(name = "venue_id")
     Long venueId;
 
@@ -70,6 +70,9 @@ public class Venue extends Auditable<String> {
 
     @Transient
     private int leadCount;
+
+    @Transient
+    private Double distance;
 
 
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

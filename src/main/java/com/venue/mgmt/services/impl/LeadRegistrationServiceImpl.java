@@ -146,7 +146,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         existingLead.setRemarks(updatedLead.getRemarks());
         existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
-
         LeadRegistration savedLead = leadRegRepository.save(existingLead);
         logger.info("Updated lead with ID: {}", savedLead.getLeadId());
         return savedLead;

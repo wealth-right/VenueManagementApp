@@ -27,7 +27,7 @@ public class LeadRegistration extends Auditable<String> {
     @NotNull
     String fullName;
 
-    @Column(name = "age")
+    @Column(name = "age",nullable = false)
     int age;
 
     @Column(name = "dob")
@@ -50,6 +50,7 @@ public class LeadRegistration extends Auditable<String> {
     @ElementCollection
     @CollectionTable(
             name = "lead_existing_products",
+            schema = "venuemgmt",
             joinColumns = @JoinColumn(name = "lead_id")
     )
     @Enumerated(EnumType.STRING)

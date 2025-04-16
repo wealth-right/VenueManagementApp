@@ -28,8 +28,13 @@ public class UserMgmtResService {
         if (customerId == null || customerId.isEmpty()) {
             return null;
         }
-        String sql = "select * from customerservice.customer where customerid = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{customerId}, customerRowMapper());
+        try {
+            String sql = "select * from customerservice.customer where customerid = ?";
+            return jdbcTemplate.queryForObject(sql, new Object[]{customerId}, customerRowMapper());
+        }
+        catch (Exception e) {
+            return new CustomerRequest();
+        }
     }
 
     public UserMasterRequest getUserMasterDetails(String userId){
