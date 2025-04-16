@@ -64,7 +64,7 @@ public class VenueServiceImpl implements VenueService {
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
                 return getAllVenuesSortedByCreationDate("desc", 0, Integer.MAX_VALUE, userId).getContent();
             }
-            return venueRepository.searchVenues(searchTerm,userId);
+            return venueRepository.searchVenues(searchTerm);
         } catch (Exception e) {
             logger.error("Error while searching venues: {}", e.getMessage(), e);
             throw e;

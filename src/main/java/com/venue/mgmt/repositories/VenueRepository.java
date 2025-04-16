@@ -18,14 +18,16 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
     @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venuemgmt.venue v " +
             "LEFT JOIN venuemgmt.lead_registration l ON v.venue_id = l.venue_id " +
             "WHERE v.is_active = true " +
-            "AND v.created_by = :userId " +
-            "AND (:searchTerm IS NULL OR TRIM(:searchTerm) = '' OR " +
-            "     v.venue_name ILIKE CONCAT('%', TRIM(:searchTerm), '%') OR " +
-            "     v.address ILIKE CONCAT('%', TRIM(:searchTerm), '%')) " +
+            "AND (:searchTerm IS NULL OR :searchTerm = '' OR " +
+            "     LOWER(v.venue_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.address) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.city) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.state) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.country) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
             "GROUP BY v.venue_id " +
             "ORDER BY v.creation_date DESC",
             nativeQuery = true)
-    List<Venue> searchVenues(@Param("searchTerm") String searchTerm, @Param("userId") String userId);
+    List<Venue> searchVenues(@Param("searchTerm") String searchTerm);
 
 
 
@@ -42,4 +44,5 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
                                      Pageable pageable);
 
 
+    List<Venue> findAllByCreatedBy(String createdBy);
 }
