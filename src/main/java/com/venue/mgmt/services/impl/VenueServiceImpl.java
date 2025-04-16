@@ -18,7 +18,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 @Service
 @Slf4j
@@ -44,8 +47,8 @@ public class VenueServiceImpl implements VenueService {
             venue.setIsActive(true);
             return venueRepository.save(venue);
         } catch (Exception e) {
-            logger.error("Error saving venue: {}", e.getMessage());
-            throw new VenueNotSavedException("Failed to save venue"+e);
+                logger.error("Error saving venue: {}", e.getMessage());
+            throw new VenueNotSavedException("Failed to save venue "+ venue.getVenueName());
         }
     }
 
@@ -61,7 +64,7 @@ public class VenueServiceImpl implements VenueService {
             if (searchTerm == null || searchTerm.trim().isEmpty()) {
                 return getAllVenuesSortedByCreationDate("desc", 0, Integer.MAX_VALUE, userId).getContent();
             }
-            return venueRepository.searchVenues(searchTerm,userId);
+            return venueRepository.searchVenues(searchTerm);
         } catch (Exception e) {
             logger.error("Error while searching venues: {}", e.getMessage(), e);
             throw e;
@@ -78,10 +81,17 @@ public class VenueServiceImpl implements VenueService {
                     venue.setLatitude(updatedVenue.getLatitude());
                     venue.setLongitude(updatedVenue.getLongitude());
                     venue.setAddress(updatedVenue.getAddress());
+                    venue.setPinCode(updatedVenue.getPinCode());
+                    venue.setLocality(updatedVenue.getLocality());
+                    venue.setCity(updatedVenue.getCity());
+                    venue.setState(updatedVenue.getState());
+                    venue.setCountry(updatedVenue.getCountry());
                     return venueRepository.save(venue);
                 })
                 .orElseThrow(() -> new EntityNotFoundException(ErrorMsgConstants.VENUE_NOT_FOUND + venueId));
     }
+
+
 
     @Override
     @Transactional
@@ -105,21 +115,53 @@ public class VenueServiceImpl implements VenueService {
         return venueRepository.save(venue);
     }
 
+    public List<Venue> findNearestVenues(double targetLat, double targetLon, int k, String userId) {
+        List<Venue> allVenues = venueRepository.findAllByCreatedBy(userId);
 
-    @Override
-    public Page<Venue> getAllVenuesSorted(String sortBy, String sortDirection, Double latitude, Double longitude, int page, int size) {
-        return venueRepository.findAllVenueByDistance(latitude, longitude, sortDirection, PageRequest.of(page, size));
+        PriorityQueue<Venue> maxHeap = new PriorityQueue<>((a, b) -> {
+            double distA = calculateDistance(targetLat, targetLon, a.getLatitude(), a.getLongitude());
+            double distB = calculateDistance(targetLat, targetLon, b.getLatitude(), b.getLongitude());
+            return Double.compare(distB, distA);
+        });
+        for (Venue venue : allVenues) {
+            double distance = calculateDistance(targetLat, targetLon, venue.getLatitude(), venue.getLongitude());
+            venue.setDistance(distance);
+            maxHeap.offer(venue);
+            if (maxHeap.size() > k) {
+                maxHeap.poll();
+            }
+        }
+        List<Venue> nearest = new ArrayList<>(maxHeap);
+        nearest.sort(Comparator.comparingDouble(Venue::getDistance));
+        return nearest;
+    }
+
+    public double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int EARTH_RADIUS_KM = 6371;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return EARTH_RADIUS_KM * c;
+    }
+
+
+    public Page<Venue> getAllVenuesSortedByDistance(String sortDirection, Double latitude, Double longitude, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return venueRepository.findNearestLocations(latitude, longitude, pageable);
     }
 
     @Override
-    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {// jo marketier ne add kia hai utna hi venue count dikhana hai leadCOunt me
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
+    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {
+        Sort.Direction direction = sortDirection.contains("DESC") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, "creationDate");
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Venue> venues = venueRepository.findAll(pageable);
-        venues.forEach(venue -> venue.setLeadCount(venue.getLeads().size()));
-        return venues;
+        return venueRepository.findAll(pageable);
     }
 
 }

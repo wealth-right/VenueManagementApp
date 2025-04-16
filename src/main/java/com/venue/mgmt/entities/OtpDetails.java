@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "otp_details", schema = "leadmgmt")
+@Table(name = "otp_details", schema = "venuemgmt")
 public class OtpDetails extends Auditable<String> {
 
     @Id

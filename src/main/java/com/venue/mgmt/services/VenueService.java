@@ -16,5 +16,8 @@ public interface VenueService {
     Venue updateVenue(Long venueId, Venue venue);
     void deleteVenue(Long venueId);
     Venue addLeadToVenue(LeadRegistration leadRegistration);
-    Page<Venue> getAllVenuesSorted(String sortBy, String sortDirection, Double latitude, Double longitude, int page, int size);
+
+    double calculateDistance(double lat1, double lon1, double lat2, double lon2);
+
+    Page<Venue> getAllVenuesSortedByDistance(String sortDirection, Double latitude, Double longitude, int page, int size);
  }

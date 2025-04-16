@@ -1,6 +1,7 @@
 package com.venue.mgmt;
 
 import com.venue.mgmt.filter.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -20,6 +21,7 @@ import java.util.Optional;
 @EnableJpaAuditing(auditorAwareRef = "auditorProvider")
 @EnableWebMvc
 public class VenueManagementAppApplication {
+
 
     public static void main(String[] args) {
         SpringApplication.run(VenueManagementAppApplication.class, args);
@@ -50,7 +52,7 @@ public class VenueManagementAppApplication {
         registrationBean.setFilter(new JwtAuthenticationFilter());
         registrationBean.addUrlPatterns("/venue-app/v1/*"); // Adjust the URL patterns as needed
         registrationBean.addInitParameter("excludedUrls",
-                "/api/venue-app/v1/auth/sendOtp,/api/venue-app/v1/auth/verify-otp"); // Add this line
+                "/api/venue-app/v1/auth/sendOtp,/api/venue-app/v1/auth/verify-otp");
         return registrationBean;
     }
 }

@@ -28,8 +28,13 @@ public class UserMgmtResService {
         if (customerId == null || customerId.isEmpty()) {
             return null;
         }
-        String sql = "select * from customerservice.customer where customerid = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{customerId}, customerRowMapper());
+        try {
+            String sql = "select * from customerservice.customer where customerid = ?";
+            return jdbcTemplate.queryForObject(sql, new Object[]{customerId}, customerRowMapper());
+        }
+        catch (Exception e) {
+            return new CustomerRequest();
+        }
     }
 
     public UserMasterRequest getUserMasterDetails(String userId){
@@ -38,7 +43,11 @@ public class UserMgmtResService {
         }
         String sql = "select id,user_id,first_name,last_name,mobile_number,email_id,branchcode,channelcode " +
                 "from usermgmt.usermaster where user_id = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{userId}, userMasterRowMapper());
+        try {
+            return jdbcTemplate.queryForObject(sql, new Object[]{userId}, userMasterRowMapper());
+        } catch (Exception e) {
+            return new UserMasterRequest();
+        }
     }
 
     private RowMapper<UserMasterRequest> userMasterRowMapper(){

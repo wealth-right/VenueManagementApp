@@ -5,6 +5,16 @@ public class GeneralMsgConstants {
 
     public static final String TOKEN_EXPIRED = "Token is expired";
 
+    public static final String LONG_NAME="long_name";
+
+    public static final String POSTAL_CODE="postal_code";
+    public static final String LOCALITY="locality";
+    public static  final String SUB_LOCALITY="sublocality_level_1";
+    public static final String STATE="administrative_area_level_1";
+
+    public static final String COUNTRY="country";
+    public  static final int OK= 200;
+
     public static final String SUCCESS="Success";
     public static final String OTP_SENT_SUCCESS= "OTP sent successfully";
 
