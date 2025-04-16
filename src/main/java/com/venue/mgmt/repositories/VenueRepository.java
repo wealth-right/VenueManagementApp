@@ -22,6 +22,7 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
             "     LOWER(v.venue_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "     LOWER(v.address) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "     LOWER(v.city) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.pincode) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "     LOWER(v.state) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "     LOWER(v.country) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
             "GROUP BY v.venue_id " +
