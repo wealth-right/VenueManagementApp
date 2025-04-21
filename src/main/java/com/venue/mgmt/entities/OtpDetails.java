@@ -1,11 +1,7 @@
 package com.venue.mgmt.entities;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity

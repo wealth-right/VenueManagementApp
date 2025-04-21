@@ -81,6 +81,7 @@ public class VenueServiceImpl implements VenueService {
                     venue.setLatitude(updatedVenue.getLatitude());
                     venue.setLongitude(updatedVenue.getLongitude());
                     venue.setAddress(updatedVenue.getAddress());
+                    venue.setActivityType(updatedVenue.getActivityType());
                     venue.setPinCode(updatedVenue.getPinCode());
                     venue.setLocality(updatedVenue.getLocality());
                     venue.setCity(updatedVenue.getCity());

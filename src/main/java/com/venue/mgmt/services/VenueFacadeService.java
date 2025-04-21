@@ -1,20 +1,20 @@
 package com.venue.mgmt.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.venue.mgmt.controller.VenueController;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
+import com.venue.mgmt.request.ActivityTypeMaster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
+import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 import java.util.*;
 
-import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 
 @Service
 public class VenueFacadeService {
@@ -24,21 +24,23 @@ public class VenueFacadeService {
     private final VenueRepository venueRepos;
 
     private final VenueService venueService;
+    private final JdbcTemplate jdbcTemplate;
 
     private static final Logger logger = LogManager.getLogger(VenueFacadeService.class);
 
-    public VenueFacadeService(GooglePlacesService googleMapsService, VenueRepository venueRepos,VenueService venueService) {
+    public VenueFacadeService(GooglePlacesService googleMapsService, VenueRepository venueRepos,VenueService venueService,JdbcTemplate jdbcTemplate) {
         this.googleMapsService = googleMapsService;
         this.venueRepos = venueRepos;
         this.venueService=venueService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void fetchAndSetAddressDetails(Venue venue) throws Exception {
         JsonNode geocodeResponse = googleMapsService.geocodeAddress(venue.getAddress());
-        if (geocodeResponse == null || !geocodeResponse.has("results") || geocodeResponse.path("results").isEmpty()) {
+        if (geocodeResponse == null || !geocodeResponse.has(RESULT) || geocodeResponse.path(RESULT).isEmpty()) {
             return;
         }
-        JsonNode addressComponents = geocodeResponse.path("results").get(0).path("address_components");
+        JsonNode addressComponents = geocodeResponse.path(RESULT).get(0).path("address_components");
         for (JsonNode component : addressComponents) {
             List<String> types = new ArrayList<>();
             component.path("types").forEach(type -> types.add(type.asText()));
@@ -58,8 +60,27 @@ public class VenueFacadeService {
                 venue.setCountry(component.path(LONG_NAME).asText());
             }
         }
+        venue.setActivityType(venue.getActivityType());
+        logger.info("Activity type: {}", venue.getActivityType());
     }
 
+    public ActivityTypeMaster getActivityTypeById(String activityType){
+        if (activityType == null || activityType.isEmpty()) {
+            return null;
+        }
+        try {
+            String sql = "select * from venuemgmt.activityTypeMaster where activitytype = ?";
+            return jdbcTemplate.queryForObject(sql, new Object[]{activityType}, (rs, rowNum) -> {
+                ActivityTypeMaster activityTypeMaster = new ActivityTypeMaster();
+                activityTypeMaster.setId(rs.getLong("id"));
+                activityTypeMaster.setActivityType(rs.getString("activitytype"));
+                activityTypeMaster.setStatus(rs.getBoolean("isactive"));
+                return activityTypeMaster;
+            });
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public void calculateTotalLeadsCount(List<Venue> venues, String userId, LeadRegRepository leadRegRepository) {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -88,7 +109,7 @@ public class VenueFacadeService {
                 lat = Double.parseDouble(parts[0].trim());
                 lon = Double.parseDouble(parts[1].trim());
             } catch (Exception e) {
-                logger.warn("Invalid location format. Expected 'lat,lon'. Got: " + location);
+                logger.warn("Invalid location format", e);
             }
         }
 

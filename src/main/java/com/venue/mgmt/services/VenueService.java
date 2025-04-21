@@ -20,4 +20,5 @@ public interface VenueService {
     double calculateDistance(double lat1, double lon1, double lat2, double lon2);
 
     Page<Venue> getAllVenuesSortedByDistance(String sortDirection, Double latitude, Double longitude, int page, int size);
- }
+
+}

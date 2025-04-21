@@ -1,5 +1,6 @@
 package com.venue.mgmt.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -67,6 +68,11 @@ public class Venue extends Auditable<String> {
     String pinCode;
     //use the vector datatype instead of string
     //add the pincode as a new column
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "activitytypeid", referencedColumnName = "id", nullable = false)
+    private ActivityType activityType;
+
 
     @Transient
     private int leadCount;
