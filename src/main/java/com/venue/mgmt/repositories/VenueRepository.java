@@ -15,25 +15,35 @@ import java.util.Optional;
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     Optional<Venue> findByVenueId(Long venueId);
 
-    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venue v " +
-            "LEFT JOIN lead_registration l ON v.venue_id = l.venue_id " +
+    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venuemgmt.venue v " +
+            "LEFT JOIN venuemgmt.lead_registration l ON v.venue_id = l.venue_id " +
             "WHERE v.is_active = true " +
-            "AND v.created_by = :userId " +
-            "AND (:searchTerm IS NULL OR TRIM(:searchTerm) = '' OR " +
-            "     v.venue_name ILIKE CONCAT('%', TRIM(:searchTerm), '%') OR " +
-            "     v.address ILIKE CONCAT('%', TRIM(:searchTerm), '%')) " +
+            "AND (:searchTerm IS NULL OR :searchTerm = '' OR " +
+            "     LOWER(v.venue_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.address) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.city) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.pincode) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.state) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "     LOWER(v.country) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
             "GROUP BY v.venue_id " +
             "ORDER BY v.creation_date DESC",
             nativeQuery = true)
-    List<Venue> searchVenues(@Param("searchTerm") String searchTerm, @Param("userId") String userId);
+    List<Venue> searchVenues(@Param("searchTerm") String searchTerm);
 
-    @Query(value = "SELECT * FROM venue " +
-            "ORDER BY point(longitude, latitude) <-> point(:userLong, :userLat) " +
-            ":sortDirection", nativeQuery = true)
-    Page<Venue> findAllVenueByDistance(
-            @Param("userLat") Double userLat,
-            @Param("userLong") Double userLong,
-            @Param("sortDirection") String sortDirection,
-            Pageable pageable);
 
+
+    @Query(value = "SELECT *, " +
+            "(6371 * acos(cos(radians(:lat)) * cos(radians(l.latitude)) * " +
+            "cos(radians(l.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(l.latitude)))) AS distance " +
+            "FROM venue l " +
+            "ORDER BY l.creation_date DESC",
+            countQuery = "SELECT count(*) FROM venue l",
+            nativeQuery = true)
+    Page<Venue> findNearestLocations(@Param("lat") double latitude,
+                                     @Param("lng") double longitude,
+                                     Pageable pageable);
+
+
+    List<Venue> findAllByCreatedBy(String createdBy);
 }

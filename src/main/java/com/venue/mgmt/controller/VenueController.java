@@ -1,13 +1,12 @@
 package com.venue.mgmt.controller;
 
 import com.venue.mgmt.constant.ErrorMsgConstants;
-import com.venue.mgmt.constant.GeneralMsgConstants;
-import com.venue.mgmt.entities.LeadRegistration;
+import com.venue.mgmt.dto.VenueDTO;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
-import com.venue.mgmt.response.ApiResponse;
-import com.venue.mgmt.response.PaginationDetails;
-import com.venue.mgmt.response.VenueResponse;
+import com.venue.mgmt.response.*;
+import com.venue.mgmt.services.GooglePlacesService;
+import com.venue.mgmt.services.VenueFacadeService;
 import com.venue.mgmt.services.VenueService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -21,8 +20,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
+
+import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 
 @RestController
 @RequestMapping("/venue-app/v1/venues")
@@ -36,24 +36,34 @@ public class VenueController {
 
     private final LeadRegRepository leadRegRepository;
 
+    private final GooglePlacesService googleMapsService;
 
-    public VenueController(VenueService venueService, HttpServletRequest request,LeadRegRepository leadRegRepository) {
+    private final VenueFacadeService venueFacadeService;
+
+
+    public VenueController(VenueService venueService, HttpServletRequest request,LeadRegRepository leadRegRepository,
+                           GooglePlacesService googleMapsService,
+                           VenueFacadeService venueFacadeService){
         this.venueService = venueService;
         this.request = request;
         this.leadRegRepository = leadRegRepository;
+        this.googleMapsService = googleMapsService;
+        this.venueFacadeService = venueFacadeService;
     }
 
     @PostMapping
     public ResponseEntity<VenueResponse<Venue>> createVenue(
             @Valid @RequestBody Venue venue) {
+        logger.info("VenueManagementApp - Inside create Venue Method");
 
-        String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
+        String userId = (String) request.getAttribute(USER_ID);
         try {
+            venueFacadeService.fetchAndSetAddressDetails(venue);
             venue.setCreatedBy(userId);
             Venue savedVenue = venueService.saveVenue(venue);
             VenueResponse<Venue> response = new VenueResponse<>();
-            response.setStatusCode(200);
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusCode(OK);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(savedVenue);
             return ResponseEntity.ok(response);
@@ -67,28 +77,54 @@ public class VenueController {
         }
     }
 
+    @GetMapping("/text-search")
+    public ResponseEntity<GoogleMapResponse<VenueSearchResponse>> textSearch(
+            @RequestParam String query,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Integer radius,
+            @RequestParam(required = false) String nextPageToken) {
+        try {
+            StringBuilder nextPageTokenBuilder = new StringBuilder();
+            List<VenueDTO> searchResult;
+            if (nextPageToken != null && !nextPageToken.isEmpty()) {
+                searchResult = googleMapsService.textSearchWithToken(nextPageToken, nextPageTokenBuilder);
+            } else {
+                searchResult = googleMapsService.textSearch(query, location, radius, nextPageTokenBuilder);
+            }
+            VenueSearchResponse venueSearchResponse = new VenueSearchResponse();
+            venueSearchResponse.setVenues(searchResult);
+            venueSearchResponse.setNextPageToken(nextPageTokenBuilder.toString());
+            GoogleMapResponse<VenueSearchResponse> response = new GoogleMapResponse<>();
+            response.setStatusCode(OK);
+            response.setStatusMsg(SUCCESS);
+            response.setErrorMsg(null);
+            response.setResponse(venueSearchResponse);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            GoogleMapResponse<VenueSearchResponse> response = new GoogleMapResponse<>();
+            response.setStatusCode(500);
+            response.setStatusMsg("Error while performing text search");
+            response.setErrorMsg(e.getMessage());
+            response.setResponse(null);
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Venue>>> getAllVenues(
+            @RequestParam(value = "location", required = false) String location,
             @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
         logger.info("VenueManagementApp - Inside get All Venues Method");
         try {
-            String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
+            String userId = (String) request.getAttribute(USER_ID);
             pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
-
-            Page<Venue> venues = venueService.getAllVenuesSortedByCreationDate(pageable.getSort().toString(),
-                    pageable.getPageNumber(), pageable.getPageSize(), userId);
-
-            venues.forEach(venue -> {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedBy(venue.getVenueId(), userId);
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDate(venue.getVenueId(),
-                        userId, new Date());
-                venue.setLeadCount(leadCount);
-                venue.setLeadCountToday(leadCountToday);
-            });
+            Page<Venue> venues = venueFacadeService.getVenuesByLocationOrDefault(location, userId, pageable);
+            venueFacadeService.calculateTotalLeadsCount(venues.getContent(), userId, leadRegRepository);
             ResponseEntity<Page<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<Page<Venue>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(venues.getContent());
             PaginationDetails paginationDetails = new PaginationDetails();
@@ -110,20 +146,14 @@ public class VenueController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Venue>>> searchVenues(
             @RequestParam(required = false) String query) {
-        String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
+        String userId = (String) request.getAttribute(USER_ID);
         try {
             List<Venue> venues = venueService.searchVenues(query, userId);
-            venues.forEach(venue -> {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedBy(venue.getVenueId(), userId);
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDate(venue.getVenueId(),
-                        userId, new Date());
-                venue.setLeadCount(leadCount);
-                venue.setLeadCountToday(leadCountToday);
-            });
+           venueFacadeService.calculateTotalLeadsCount(venues, userId, leadRegRepository);
             ResponseEntity<List<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<List<Venue>> response = new ApiResponse<>();
             response.setStatusCode(responseEntity.getStatusCode().value());
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(venues);
             return ResponseEntity.ok(response);
@@ -136,24 +166,16 @@ public class VenueController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
     @GetMapping("/details")
     public ResponseEntity<ApiResponse<List<Venue>>> getVenueDetailsByIds(
             @RequestParam(name = "venueIds") List<Long> venueIds) {
-
         try {
-            String userId = (String) request.getAttribute(GeneralMsgConstants.USER_ID);
+            String userId = (String) request.getAttribute(USER_ID);
             List<Venue> venues = venueService.getVenuesByIds(venueIds);
-            venues.forEach(venue -> {
-                int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedBy(venue.getVenueId(), userId);
-                int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDate(venue.getVenueId(),
-                        userId, new Date());
-                venue.setLeadCount(leadCount);
-                venue.setLeadCountToday(leadCountToday);
-            });
+            venueFacadeService.calculateTotalLeadsCount(venues, userId, leadRegRepository);
             ApiResponse<List<Venue>> response = new ApiResponse<>();
-            response.setStatusCode(200);
-            response.setStatusMsg(GeneralMsgConstants.SUCCESS);
+            response.setStatusCode(OK);
+            response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(venues);
             return ResponseEntity.ok(response);
@@ -166,14 +188,6 @@ public class VenueController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
-
-    @PostMapping("/leads")
-    public ResponseEntity<Venue> addLeadToVenue(
-            @RequestBody LeadRegistration leadRegistration) {
-        return ResponseEntity.ok(venueService.addLeadToVenue(leadRegistration));
-    }
-
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(
@@ -183,7 +197,33 @@ public class VenueController {
             @RequestParam(required = false) Double longitude,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<Venue> venues = venueService.getAllVenuesSorted(sortBy, sortDirection, latitude, longitude, page, size);
+        Page<Venue> venues = venueService.getAllVenuesSortedByDistance(sortDirection, latitude, longitude, page, size);
         return ResponseEntity.ok(venues);
+    }
+
+
+
+    @PutMapping("/{venueId}")
+    public ResponseEntity<VenueResponse<Venue>> updateVenue(
+            @PathVariable Long venueId,
+            @Valid @RequestBody Venue venue) {
+        try {
+           venueFacadeService.fetchAndSetAddressDetails(venue);
+            // Update the venue in the database
+            Venue updatedVenue = venueService.updateVenue(venueId, venue);
+            VenueResponse<Venue> response = new VenueResponse<>();
+            response.setStatusCode(OK);
+            response.setStatusMsg(SUCCESS);
+            response.setErrorMsg(null);
+            response.setResponse(updatedVenue);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            VenueResponse<Venue> response = new VenueResponse<>();
+            response.setStatusCode(500);
+            response.setStatusMsg(ErrorMsgConstants.FAILED);
+            response.setErrorMsg(e.getMessage());
+            response.setResponse(null);
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 }

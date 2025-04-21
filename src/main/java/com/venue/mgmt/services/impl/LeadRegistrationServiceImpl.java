@@ -1,6 +1,5 @@
 package com.venue.mgmt.services.impl;
 
-import com.venue.mgmt.dto.UserDetailsResponse;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
@@ -10,6 +9,7 @@ import com.venue.mgmt.request.CustomerServiceClient;
 import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
+import com.venue.mgmt.services.impl.utils.OccupationCodesUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +41,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final UserMgmtResService userMgmtResService;
 
 
+
     private final HttpServletRequest request;
 
     public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService, HttpServletRequest request) {
@@ -48,7 +49,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         this.venueRepository = venueRepository;
         this.userMgmtResService = userMgmtResService;
         this.request = request;
-
     }
 
     @Override
@@ -146,7 +146,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         existingLead.setRemarks(updatedLead.getRemarks());
         existingLead.setExistingProducts(updatedLead.getExistingProducts());
 
-
         LeadRegistration savedLead = leadRegRepository.save(existingLead);
         logger.info("Updated lead with ID: {}", savedLead.getLeadId());
         return savedLead;
@@ -177,7 +176,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         custRequest.setCountrycode("+91");
         custRequest.setCustomerId(customerId);
         custRequest.setAddedUpdatedBy(userId);
-        custRequest.setAssignedto(userId);
+//        custRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             custRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
@@ -189,7 +188,11 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                 custRequest.setTitle("Miss.");
             }
         }
-        custRequest.setOccupation("01");
+        String occupation = null;
+        if(leadRegistration.getOccupation()!=null && (!leadRegistration.getOccupation().isEmpty())){
+            occupation=OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        }
+        custRequest.setOccupation(occupation);
         custRequest.setTaxStatus("01");
         custRequest.setCountryOfResidence("India");
         custRequest.setSource("QuickTapApp");
@@ -203,9 +206,12 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     @Override
     @Transactional
-    public void deleteLead(Long leadId) {
+    public void deleteLead(Long leadId,String authHeader) {
         LeadRegistration lead = leadRegRepository.findById(leadId)
                 .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
+        CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
+        String customerId = lead.getCustomerId();
+        customerServiceClient.deleteCustomer(customerId,authHeader);
         lead.setDeleted(true);
         lead.setActive(false);
         leadRegRepository.save(lead);

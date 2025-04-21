@@ -1,5 +1,6 @@
 package com.venue.mgmt.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -7,10 +8,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -21,9 +20,8 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "venue", schema = "leadmgmt")
+@Table(name = "venue", schema = "venuemgmt")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Venue extends Auditable<String> {
 
@@ -31,7 +29,7 @@ public class Venue extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "venue_seq")
-    @SequenceGenerator(name = "venue_seq", sequenceName = "venue_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "venue_seq", sequenceName = "venue_id_seq", allocationSize = 1, initialValue =30)
     @Column(name = "venue_id")
     Long venueId;
 
@@ -53,11 +51,34 @@ public class Venue extends Auditable<String> {
     @NotBlank(message = "Address is required")
     @Column(name = "address", nullable = false)
     String address;
+
+    @Column(name = "locality")
+    String locality;
+
+    @Column(name = "city")
+    String city;
+
+    @Column(name = "state")
+    String state;
+
+    @Column(name = "country")
+    String country;
+
+    @Column(name = "pincode")
+    String pinCode;
     //use the vector datatype instead of string
     //add the pincode as a new column
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "activitytypeid", referencedColumnName = "id", nullable = false)
+    private ActivityType activityType;
+
+
     @Transient
     private int leadCount;
+
+    @Transient
+    private Double distance;
 
 
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -6,8 +6,6 @@ import com.venue.mgmt.enums.ProductType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
@@ -16,7 +14,7 @@ import java.util.Set;
 
 @Entity
 @DynamicUpdate
-@Table(name = "lead_registration", schema = "leadmgmt")
+@Table(name = "lead_registration", schema = "venuemgmt")
 public class LeadRegistration extends Auditable<String> {
 
     @Id
@@ -29,7 +27,7 @@ public class LeadRegistration extends Auditable<String> {
     @NotNull
     String fullName;
 
-    @Column(name = "age")
+    @Column(name = "age",nullable = false)
     int age;
 
     @Column(name = "dob")
@@ -52,6 +50,7 @@ public class LeadRegistration extends Auditable<String> {
     @ElementCollection
     @CollectionTable(
             name = "lead_existing_products",
+            schema = "venuemgmt",
             joinColumns = @JoinColumn(name = "lead_id")
     )
     @Enumerated(EnumType.STRING)

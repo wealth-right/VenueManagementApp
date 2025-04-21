@@ -1,15 +1,11 @@
 package com.venue.mgmt.entities;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "otp_details", schema = "leadmgmt")
+@Table(name = "otp_details", schema = "venuemgmt")
 public class OtpDetails extends Auditable<String> {
 
     @Id

@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
@@ -34,11 +35,12 @@ public class OtpDetailsUtils {
         logger.info("NotificationServiceUtils - Inside sendSMS method");
         String response = null;
         try {
+            String decodedMessage = URLDecoder.decode(smsMessage, StandardCharsets.UTF_8);
             String url = String.format(
                     "%s?feedid=%s&username=%s&password=%s&To=%s&Text=%s&templateid=%s&entityid=%s&short=%s&async=%s&senderid=%s",
                     otpPath.getNetcore().getUrl(), otpPath.getNetcore().getFeedId(), otpPath.getNetcore().getUsername(), otpPath.getNetcore().getPassword(),
                     URLEncoder.encode(smsNumber, StandardCharsets.UTF_8),
-                    URLEncoder.encode(smsMessage, StandardCharsets.UTF_8),
+                    decodedMessage,
                     otpPath.getNetcore().getTemplateId(), otpPath.getNetcore().getEntityId(), otpPath.getNetcore().getShorts(),
                     otpPath.getNetcore().getAsync(), otpPath.getNetcore().getSenderId()
             );
