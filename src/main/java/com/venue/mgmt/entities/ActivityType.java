@@ -15,7 +15,7 @@ public class ActivityType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "activity_type_seq")
-    @SequenceGenerator(name = "activity_type_seq", sequenceName = "venuemgmt.activity_type_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "activity_type_seq", sequenceName = "venuemgmt.activitytypemaster_id_seq", allocationSize = 1)
     @Column(name = "id")
     private Long id;
 

@@ -1,6 +1,5 @@
 package com.venue.mgmt.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -29,7 +28,7 @@ public class Venue extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "venue_seq")
-    @SequenceGenerator(name = "venue_seq", sequenceName = "venue_id_seq", allocationSize = 1, initialValue =30)
+    @SequenceGenerator(name = "venue_seq", sequenceName = "venuemgmt.venue_id_seq", allocationSize = 1, initialValue =30)
     @Column(name = "venue_id")
     Long venueId;
 

@@ -3,6 +3,7 @@ package com.venue.mgmt.controller;
 import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.dto.VenueDTO;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.exception.VenueAlreadyExistsException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.response.*;
 import com.venue.mgmt.services.GooglePlacesService;
@@ -53,7 +54,7 @@ public class VenueController {
 
     @PostMapping
     public ResponseEntity<VenueResponse<Venue>> createVenue(
-            @Valid @RequestBody Venue venue) {
+            @Valid @RequestBody Venue venue) throws VenueAlreadyExistsException {
         logger.info("VenueManagementApp - Inside create Venue Method");
 
         String userId = (String) request.getAttribute(USER_ID);
@@ -208,6 +209,7 @@ public class VenueController {
             @PathVariable Long venueId,
             @Valid @RequestBody Venue venue) {
         try {
+
            venueFacadeService.fetchAndSetAddressDetails(venue);
             // Update the venue in the database
             Venue updatedVenue = venueService.updateVenue(venueId, venue);

@@ -19,7 +19,7 @@ public class LeadRegistration extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lead_registration_seq")
-    @SequenceGenerator(name = "lead_registration_seq", sequenceName = "lead_registration_lead_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "lead_registration_seq", sequenceName = "venuemgmt.lead_registration_lead_id_seq", allocationSize = 1)
     @Column(name = "lead_id")
     Long leadId;
 

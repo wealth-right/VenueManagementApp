@@ -46,4 +46,6 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
 
 
     List<Venue> findAllByCreatedBy(String createdBy);
+
+    boolean existsByLatitudeAndLongitude(Double latitude, Double longitude);
 }

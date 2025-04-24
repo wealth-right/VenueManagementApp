@@ -153,7 +153,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private void persistCustomerDetails(String userId, String customerId,
                                         LeadRegistration leadRegistration, String authHeader) {
-        // Fetch user details from the API
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
         if (userMasterDetails == null) {
             return;
@@ -164,7 +163,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             logger.error("Customer not found with ID: {}", customerId);
             return;
         }
-        // Create CustomerRequest object
         if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
             custRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
             custRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
@@ -176,7 +174,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         custRequest.setCountrycode("+91");
         custRequest.setCustomerId(customerId);
         custRequest.setAddedUpdatedBy(userId);
-//        custRequest.setAssignedto(userId);
         if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
             custRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
             if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
@@ -199,7 +196,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         custRequest.setCustomertype("Prospect");
         custRequest.setChannelcode(userMasterDetails.getChannelCode());
         custRequest.setBranchCode(userMasterDetails.getBranchCode());
-        // Save customer data
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         customerServiceClient.saveCustomerData(custRequest, authHeader);
     }

@@ -19,7 +19,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
+    @ExceptionHandler(VenueAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<Map<String, Object>> handleVenueAlreadyExistsException(VenueAlreadyExistsException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -76,10 +80,17 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(status, "Internal Server Error", message);
     }
 
+
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<Map<String, Object>> handleAlreadyExistsException(AlreadyExistsException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getReason());
+    }
+
+    @ExceptionHandler(VenueNotSavedException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<Map<String, Object>> handleVenueNotSavedException(VenueNotSavedException ex) {
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", ex.getMessage());
     }
 
     @ExceptionHandler(InvalidOtpException.class)

@@ -10,7 +10,7 @@ public class OtpDetails extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "otp_seq")
-    @SequenceGenerator(name = "otp_seq", sequenceName = "otp_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "otp_seq", sequenceName = "venuemgmt.otp_id_seq", allocationSize = 1)
     @Column(name = "id")
     private Long id;
 

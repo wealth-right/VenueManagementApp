@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
@@ -194,7 +193,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
                         leadWithVenueDetails.setDeleted(lead.getDeleted());
                         leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
-                        Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
+                        Venue leadVenue = venueRepository.findByVenueId(lead.getVenue().getVenueId()).orElse(null);
                         if (leadVenue != null) {
                             LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
                             venueDetails.setVenueId(leadVenue.getVenueId());
@@ -257,7 +256,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
                         leadWithVenueDetails.setDeleted(lead.getDeleted());
                         leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
-                        Venue leadVenue = venueRepository.findById(lead.getVenue().getVenueId()).orElse(null);
+                        Venue leadVenue = venueRepository.findByVenueId(lead.getVenue().getVenueId()).orElse(null);
                         if (leadVenue != null) {
                             LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
                             venueDetails.setVenueId(leadVenue.getVenueId());
