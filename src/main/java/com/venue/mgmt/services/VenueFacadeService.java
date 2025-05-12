@@ -98,7 +98,7 @@ public class VenueFacadeService {
         }
     }
 
-    public Page<Venue> getVenuesByLocationOrDefault(String location, String userId, Pageable pageable) {
+    public Page<Venue> getVenuesByLocationOrDefault(String location, String channelCode, Pageable pageable) {
         Double lat = null;
         Double lon = null;
 
@@ -127,7 +127,8 @@ public class VenueFacadeService {
                 venue.setDistance(distance); // store for sorting
                 logger.info("Venue ID: {}, Distance: {}", venue.getVenueId(), distance);
             });
-            allVenues.sort(Comparator.comparingDouble(Venue::getDistance));
+            allVenues.sort(Comparator.comparingDouble(Venue::getDistance)
+                    .thenComparing(Venue::getCreationDate, Comparator.reverseOrder()));
 
             // Manual pagination
             int start = (int) pageable.getOffset();
@@ -142,7 +143,7 @@ public class VenueFacadeService {
                     pageable.getSort().toString(),
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    userId
+                    channelCode
             );
         }
     }

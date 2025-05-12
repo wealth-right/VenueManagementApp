@@ -52,7 +52,7 @@ public class VenueServiceImpl implements VenueService {
             if (venue.getLatitude() != null && venue.getLongitude() != null) {
                 boolean venueExists = venueRepos.existsByLatitudeAndLongitude(venue.getLatitude(), venue.getLongitude());
                 if (venueExists) {
-                    throw new VenueAlreadyExistsException("Venue with the same latitude "+venue.getLatitude()+" and longitude "+venue.getLongitude() +" already exists.");
+                        throw new VenueAlreadyExistsException("Duplicate Activity Point Present.");
                 }
             }
             return venueRepository.save(venue);
@@ -172,12 +172,12 @@ public class VenueServiceImpl implements VenueService {
     }
 
     @Override
-    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {
+    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String channelCode) {
         Sort.Direction direction = sortDirection.contains("DESC") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "creationDate");
+        Sort sort = Sort.by(direction, "creation_date");
         Pageable pageable = PageRequest.of(page, size, sort);
-        return venueRepository.findAll(pageable);
+        return venueRepository.findByChannelCode(channelCode, pageable);
     }
 
 }

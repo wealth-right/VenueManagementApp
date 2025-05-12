@@ -5,8 +5,10 @@ import com.venue.mgmt.dto.VenueDTO;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.exception.VenueAlreadyExistsException;
 import com.venue.mgmt.repositories.LeadRegRepository;
+import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.response.*;
 import com.venue.mgmt.services.GooglePlacesService;
+import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.services.VenueFacadeService;
 import com.venue.mgmt.services.VenueService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,16 +42,18 @@ public class VenueController {
     private final GooglePlacesService googleMapsService;
 
     private final VenueFacadeService venueFacadeService;
+    private final UserMgmtResService userMgmtResService;
 
 
     public VenueController(VenueService venueService, HttpServletRequest request,LeadRegRepository leadRegRepository,
                            GooglePlacesService googleMapsService,
-                           VenueFacadeService venueFacadeService){
+                           VenueFacadeService venueFacadeService, UserMgmtResService userMgmtResService) {
         this.venueService = venueService;
         this.request = request;
         this.leadRegRepository = leadRegRepository;
         this.googleMapsService = googleMapsService;
         this.venueFacadeService = venueFacadeService;
+        this.userMgmtResService = userMgmtResService;
     }
 
     @PostMapping
@@ -119,8 +123,11 @@ public class VenueController {
         logger.info("VenueManagementApp - Inside get All Venues Method");
         try {
             String userId = (String) request.getAttribute(USER_ID);
+            UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
+//            extract the channelCode from the userMasterDetails
+            String channelCode = userMasterDetails.getChannelCode();
             pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
-            Page<Venue> venues = venueFacadeService.getVenuesByLocationOrDefault(location, userId, pageable);
+            Page<Venue> venues = venueFacadeService.getVenuesByLocationOrDefault(location, channelCode, pageable);
             venueFacadeService.calculateTotalLeadsCount(venues.getContent(), userId, leadRegRepository);
             ResponseEntity<Page<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<Page<Venue>> response = new ApiResponse<>();

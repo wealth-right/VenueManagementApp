@@ -15,6 +15,12 @@ import java.util.Optional;
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     Optional<Venue> findByVenueId(Long venueId);
 
+    @Query(value = "SELECT v.* FROM venuemgmt.venue v " +
+            "JOIN usermgmt.usermaster m ON v.created_by = m.user_id " +
+            "WHERE m.channelcode = :channelCode ",
+            nativeQuery = true)
+    Page<Venue> findByChannelCode(@Param("channelCode") String channelCode, Pageable pageable);
+
     @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venuemgmt.venue v " +
             "LEFT JOIN venuemgmt.lead_registration l ON v.venue_id = l.venue_id " +
             "WHERE v.is_active = true " +

@@ -11,7 +11,7 @@ public interface VenueService {
     Venue saveVenue(Venue venue) throws VenueAlreadyExistsException;
 
     List<Venue> getVenuesByIds(List<Long> venueIds);
-    Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId);
+    Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String channelCode);
     //sort by nearest as well by passing the longitude and latitude
     List<Venue> searchVenues(String searchTerm, String userId);
     Venue updateVenue(Long venueId, Venue venue);
