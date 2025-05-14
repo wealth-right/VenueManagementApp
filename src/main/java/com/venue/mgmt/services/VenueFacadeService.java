@@ -117,7 +117,7 @@ public class VenueFacadeService {
             final double finalLat = lat;
             final double finalLon = lon;
             logger.info("Latitude and Longitude provided — applying KNN logic");
-            List<Venue> allVenues = venueRepos.findAll();
+            List<Venue> allVenues = venueRepos.findByChannelCode(channelCode);
 
             logger.info("Total venues fetched: {}", allVenues.size());
 
@@ -130,13 +130,13 @@ public class VenueFacadeService {
             allVenues.sort(Comparator.comparingDouble(Venue::getDistance)
                     .thenComparing(Venue::getCreationDate, Comparator.reverseOrder()));
 
-            // Manual pagination
-            int start = (int) pageable.getOffset();
-            int end = Math.min((start + pageable.getPageSize()), allVenues.size());
-            logger.info("Pagination - Start: {}, End: {}", start, end);
-            List<Venue> pagedList = allVenues.subList(start, end);
+//            // Manual pagination
+//            int start = (int) pageable.getOffset();
+//            int end = Math.min((start + pageable.getPageSize()), allVenues.size());
+//            logger.info("Pagination - Start: {}, End: {}", start, end);
+//            List<Venue> pagedList = allVenues.subList(start, end);
 
-            return new PageImpl<>(pagedList, pageable, allVenues.size());
+            return new PageImpl<>(allVenues, pageable, allVenues.size());
         } else {
             // Default sorting by creationDate
             return venueService.getAllVenuesSortedByCreationDate(
