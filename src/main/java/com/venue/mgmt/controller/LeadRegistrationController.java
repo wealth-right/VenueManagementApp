@@ -142,7 +142,7 @@ public class LeadRegistrationController {
     @GetMapping
     @Operation(summary = "Get all leads", description = "Retrieves all leads with pagination support")
     public ResponseEntity<ApiResponse<Page<LeadWithVenueDetails>>> getAllLeads(
-            @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable,
+            @PageableDefault(sort = "created_at", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable,
             @RequestParam(required = false) Long venueId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) throws ParseException {

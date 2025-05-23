@@ -50,11 +50,11 @@ customer-service:
 
 google:
   api:
-    key: AIzaSyAtLlSmjPfqIsxUOkFOl71bZEyc7yQOkUo
+    key: "YOUR-API-KEY-HERE"
 
 
 jwt:
-  secret: "Wc2cFuYp1GyeeIJlcRkufv1OIuhOYnCSaGFXIXdZMfPKPCAn644dWJNCwPxZHzF7duQ4J3ncgM8WpKzetTl4KA=="
+  secret: "JWT-SECRET-HERE"
 
 
 

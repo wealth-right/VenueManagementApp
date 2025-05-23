@@ -79,7 +79,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                                                                                                                      int size, String userId, Long venueId,
                                                                                                                      Date startDate, Date endDate) {
         Sort.Direction direction = sortDirection.contains("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "creationDate");
+        Sort sort = Sort.by(direction, "created_at");
         Pageable pageable = PageRequest.of(page, size, sort);
 
         if (venueId != null) {
