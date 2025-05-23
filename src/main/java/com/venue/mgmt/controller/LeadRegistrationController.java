@@ -78,7 +78,7 @@ public class LeadRegistrationController {
             logger.info("{}", leadRegistration);
             String userId = request.getAttribute(USER_ID).toString();
             // Create CustomerRequest object
-            String customerDetails = persistCustomerDetails(userId, leadRegistration,authHeader);
+            String customerDetails = leadRegistrationService.persistCustomerDetails(userId, leadRegistration,authHeader);
             String customerId = CommonUtils.extractCustomerId(customerDetails);
             leadRegistration.setActive(true);
             leadRegistration.setCustomerId(customerId);
@@ -93,50 +93,7 @@ public class LeadRegistrationController {
             return ResponseEntity.ok(response);
     }
 
-    private String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
-        logger.info("VenueManagementApp - Inside persistCustomerDetails Method");
-        UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
-        if(userMasterDetails == null){
-            return null;
-        }
-        CustomerRequest customerRequest = new CustomerRequest();
-        if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
-            customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
-            customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
-            customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
-        }
-        customerRequest.setFullname(leadRegistration.getFullName());
-        customerRequest.setEmailid(leadRegistration.getEmail());
-        customerRequest.setCountrycode("+91");
-        customerRequest.setMobileno(leadRegistration.getMobileNumber());
-        customerRequest.setAddedUpdatedBy(userId);
-        if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
-            customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
-            if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
-                customerRequest.setTitle("Mr.");
-            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") && leadRegistration.getMaritalStatus() != null
-                    && (!leadRegistration.getMaritalStatus().isEmpty())
-                    && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
-                customerRequest.setTitle("Mrs.");
-            } else {
-                customerRequest.setTitle("Miss.");
-            }
-        }
-        String occupation=null;
-        if(leadRegistration.getOccupation()!=null && (!leadRegistration.getOccupation().isEmpty())){
-            occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
-        }
-        customerRequest.setOccupation(occupation);
-        customerRequest.setTaxStatus("01");
-        customerRequest.setCountryOfResidence("India");
-        customerRequest.setSource("QuickTapApp");
-        customerRequest.setCustomertype("Prospect");
-        customerRequest.setChannelcode(userMasterDetails.getChannelCode());
-        customerRequest.setBranchCode(userMasterDetails.getBranchCode());
-        CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
-        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
-        return entity.getBody();
-    }
+
 
 
     @GetMapping
@@ -180,7 +137,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setActive(lead.getActive());
                         leadWithVenueDetails.setPinCode(lead.getPinCode());
                         leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
-                        leadWithVenueDetails.setVerified(lead.getVerified());
+                        leadWithVenueDetails.setVerified(lead.getMobileVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
                         leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
                         leadWithVenueDetails.setCreationDate(lead.getCreatedAt().toString());
@@ -243,7 +200,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setPinCode(lead.getPinCode());
                         leadWithVenueDetails.setActive(lead.getActive());
                         leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
-                        leadWithVenueDetails.setVerified(lead.getVerified());
+                        leadWithVenueDetails.setVerified(lead.getMobileVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
                         leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
                         leadWithVenueDetails.setCreationDate(lead.getCreatedAt().toString());

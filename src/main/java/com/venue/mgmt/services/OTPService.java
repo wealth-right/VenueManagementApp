@@ -110,7 +110,7 @@ public class OTPService extends OtpDetailsUtils {
             // Check if the OTP is still valid
             if (latestOtpDetails.getOtp().equals(validateOtpRequest.getOtp()) && currentTime <= otpExpiryTime) {
                 leadRegRepository.findById(validateOtpRequest.getLeadId()).ifPresent(lead -> {
-                    lead.setVerified(true);
+                    lead.setMobileVerified(true);
                     leadRegRepository.save(lead);
                 });
                 latestOtpDetails.setAttempts(0); // Reset attempts on successful validation

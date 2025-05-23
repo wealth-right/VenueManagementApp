@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -69,7 +70,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     public Page<LeadRegistration> getAllLeadsSortedByCreationDateAndCreatedByAndIsDeletedFalse(String sortDirection, int page, int size, String userId) {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "creationDate");
+        Sort sort = Sort.by(direction, "createdAt");
         Pageable pageable = PageRequest.of(page, size, sort);
         return leadRegRepository.findAllByUserIdAndIsDeletedFalse(userId, pageable);
     }
@@ -79,7 +80,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                                                                                                                      int size, String userId, Long venueId,
                                                                                                                      Date startDate, Date endDate) {
         Sort.Direction direction = sortDirection.contains("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "created_at");
+        Sort sort = Sort.by(direction, "createdAt");
         Pageable pageable = PageRequest.of(page, size, sort);
 
         if (venueId != null) {
@@ -149,6 +150,51 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         LeadRegistration savedLead = leadRegRepository.save(existingLead);
         logger.info("Updated lead with ID: {}", savedLead.getLeadId());
         return savedLead;
+    }
+
+    public String persistCustomerDetails(String userId, LeadRegistration leadRegistration,String authHeader) {
+        logger.info("VenueManagementApp - Inside persistCustomerDetails Method");
+        UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
+        if(userMasterDetails == null){
+            return null;
+        }
+        CustomerRequest customerRequest = new CustomerRequest();
+        if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
+            customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
+            customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
+            customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
+        }
+        customerRequest.setFullname(leadRegistration.getFullName());
+        customerRequest.setEmailid(leadRegistration.getEmail());
+        customerRequest.setCountrycode("+91");
+        customerRequest.setMobileno(leadRegistration.getMobileNumber());
+        customerRequest.setAddedUpdatedBy(userId);
+        if (leadRegistration.getGender() != null && (!leadRegistration.getGender().isEmpty())) {
+            customerRequest.setGender(leadRegistration.getGender().substring(0, 1).toLowerCase());
+            if (leadRegistration.getGender().equalsIgnoreCase("Male")) {
+                customerRequest.setTitle("Mr.");
+            } else if (leadRegistration.getGender().equalsIgnoreCase("Female") && leadRegistration.getMaritalStatus() != null
+                    && (!leadRegistration.getMaritalStatus().isEmpty())
+                    && leadRegistration.getMaritalStatus().equalsIgnoreCase("Married")) {
+                customerRequest.setTitle("Mrs.");
+            } else {
+                customerRequest.setTitle("Miss.");
+            }
+        }
+        String occupation=null;
+        if(leadRegistration.getOccupation()!=null && (!leadRegistration.getOccupation().isEmpty())){
+            occupation = OccupationCodesUtil.mapOccupationToCode(leadRegistration.getOccupation());
+        }
+        customerRequest.setOccupation(occupation);
+        customerRequest.setTaxStatus("01");
+        customerRequest.setCountryOfResidence("India");
+        customerRequest.setSource("QuickTapApp");
+        customerRequest.setCustomertype("Prospect");
+        customerRequest.setChannelcode(userMasterDetails.getChannelCode());
+        customerRequest.setBranchCode(userMasterDetails.getBranchCode());
+        CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
+        ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
+        return entity.getBody();
     }
 
     private void persistCustomerDetails(String userId, String customerId,

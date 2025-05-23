@@ -17,4 +17,6 @@ public interface LeadRegistrationService {
     List<LeadRegistration> simpleSearchLeads(String searchTerm,String userId);
     LeadRegistration updateLead(Long leadId, LeadRegistration leadRegistration,String authHeader);
     void deleteLead(Long leadId,String authHeader);
+
+    String persistCustomerDetails(String userId, LeadRegistration leadRegistration, String authHeader);
 }

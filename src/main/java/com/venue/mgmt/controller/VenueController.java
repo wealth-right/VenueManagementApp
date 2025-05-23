@@ -119,7 +119,7 @@ public class VenueController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Venue>>> getAllVenues(
             @RequestParam(value = "location", required = false) String location,
-            @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
+            @PageableDefault(sort = "created_at", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
         logger.info("VenueManagementApp - Inside get All Venues Method");
         try {
             String userId = (String) request.getAttribute(USER_ID);
@@ -199,7 +199,7 @@ public class VenueController {
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(
-            @RequestParam(defaultValue = "creationDate") String sortBy,
+            @RequestParam(defaultValue = "created_at") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,

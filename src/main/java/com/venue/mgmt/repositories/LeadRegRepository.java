@@ -18,33 +18,31 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
 
     int countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(Long venueId, String createdBy);
 
-//    @Query(" select count(lr1_0.leadId)  from LeadRegistration lr1_0 left join " +
-//            "Venue v1_0 on v1_0.venueId=lr1_0.venue.venueId where  v1_0.venueId=:venueId and lr1_0.createdBy=:createdBy and lr1_0.creationDate between :startDate and :endDate and lr1_0.isDeleted=false")
-    int countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(Long venueId,String createdBy,Date startDate);
+    int countByVenue_VenueIdAndCreatedByAndCreatedAtAndIsDeletedFalse(Long venueId,String createdBy,Date startDate);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.isDeleted = false order by l.createdAt desc")
     Page<LeadRegistration> findAllByUserIdAndIsDeletedFalse(@Param("userId") String userId, Pageable pageable);
 
     @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndVenueIdAndIsDeletedFalse(@Param("userId") String userId, @Param("venueId") Long venueId, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId  and l.creationDate BETWEEN :startDate AND :endDate and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId  and l.createdAt BETWEEN :startDate AND :endDate and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndCreationDateBetweenAndIsDeletedFalse(@Param("userId") String userId, @Param("startDate") Date startDate, @Param("endDate") Date endDate, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate BETWEEN :startDate AND :endDate and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.createdAt BETWEEN :startDate AND :endDate and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBetweenAndIsDeletedFalse(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, @Param("endDate") Date endDate, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.creationDate >= :startDate and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.createdAt >= :startDate and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndCreationDateAfterAndIsDeletedFalse(@Param("userId") String userId, @Param("startDate") Date startDate, Pageable pageable);
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate >= :startDate and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.createdAt >= :startDate and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateAfterAndIsDeletedFalse(@Param("userId") String userId, @Param("venueId") Long venueId, @Param("startDate") Date startDate, Pageable pageable);
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.creationDate <= :endDate and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.createdAt <= :endDate and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndCreationDateBeforeAndIsDeletedFalse(@Param("userId") String userId,
                                                                                            @Param("endDate") Date endDate, Pageable pageable);
 
 
-    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.creationDate <= :endDate and l.isDeleted = false")
+    @Query("SELECT l FROM LeadRegistration l WHERE l.createdBy = :userId and l.venue.venueId = :venueId and l.createdAt <= :endDate and l.isDeleted = false")
     Page<LeadRegistration> findAllByUserIdAndVenueIdAndCreationDateBeforeAndIsDeletedFalse(@Param("userId") String userId,
                                                                           @Param("venueId") Long venueId,
                                                                           @Param("endDate") Date endDate, Pageable pageable);
@@ -58,7 +56,7 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
            "     l.email ILIKE CONCAT('%', TRIM(:searchTerm), '%') OR " +
            "     l.mobile_number ILIKE CONCAT('%', TRIM(:searchTerm), '%')" +
             ") " +
-           "ORDER BY l.creation_date DESC", 
+           "ORDER BY l.created_at DESC",
            nativeQuery = true)
     List<LeadRegistration> searchLeads(@Param("searchTerm") String searchTerm, @Param("userId") String userId);
 

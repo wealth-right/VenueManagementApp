@@ -18,7 +18,7 @@ import java.util.Set;
 public class LeadRegistration extends Auditable<String> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lead_registration_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lead_id_seq")
     @SequenceGenerator(name = "lead_id_seq", sequenceName = "leadmgmt.lead_id_seq", allocationSize = 1)
     @Column(name = "lead_id")
     Long leadId;
@@ -92,8 +92,8 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "is_deleted")
     Boolean isDeleted = false;
 
-    @Column(name = "is_verified")
-    Boolean isVerified = false;
+    @Column(name = "is_mobile_verified")
+    Boolean isMobileVerified = false;
 
 //    private Long venueId; // Add this field
 
@@ -255,12 +255,12 @@ public class LeadRegistration extends Auditable<String> {
         isDeleted = deleted;
     }
 
-    public Boolean getVerified() {
-        return isVerified;
+    public Boolean getMobileVerified() {
+        return isMobileVerified;
     }
 
-    public void setVerified(Boolean verified) {
-        isVerified = verified;
+    public void setMobileVerified(Boolean verified) {
+        isMobileVerified = verified;
     }
 
     public Venue getVenue() {

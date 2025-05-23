@@ -91,7 +91,7 @@ public class VenueFacadeService {
             int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
                     venue.getVenueId(), userId);
             // Count today's leads
-            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
+            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreatedAtAndIsDeletedFalse(
                     venue.getVenueId(), userId, today);
             venue.setLeadCount(leadCount);
             venue.setLeadCountToday(leadCountToday);
@@ -132,7 +132,7 @@ public class VenueFacadeService {
 
             return new PageImpl<>(allVenues, pageable, allVenues.size());
         } else {
-            // Default sorting by creationDate
+            // Default sorting by createdAt
             return venueService.getAllVenuesSortedByCreationDate(
                     pageable.getSort().toString(),
                     pageable.getPageNumber(),

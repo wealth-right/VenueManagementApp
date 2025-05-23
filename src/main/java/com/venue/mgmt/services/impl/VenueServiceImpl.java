@@ -175,7 +175,7 @@ public class VenueServiceImpl implements VenueService {
     public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String channelCode) {
         Sort.Direction direction = sortDirection.contains("DESC") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "creation_date");
+        Sort sort = Sort.by(direction, "created_at");
         Pageable pageable = PageRequest.of(page, size, sort);
         return venueRepository.findByChannelCode(channelCode, pageable);
     }

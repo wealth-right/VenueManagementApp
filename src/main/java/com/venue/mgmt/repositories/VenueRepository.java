@@ -32,7 +32,7 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
             "     LOWER(v.state) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "     LOWER(v.country) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
             "GROUP BY v.venue_id " +
-            "ORDER BY v.creation_date DESC",
+            "ORDER BY v.created_at DESC",
             nativeQuery = true)
     List<Venue> searchVenues(@Param("searchTerm") String searchTerm);
 
@@ -43,7 +43,7 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
             "cos(radians(l.longitude) - radians(:lng)) + " +
             "sin(radians(:lat)) * sin(radians(l.latitude)))) AS distance " +
             "FROM venue l " +
-            "ORDER BY l.creation_date DESC",
+            "ORDER BY l.created_at DESC",
             countQuery = "SELECT count(*) FROM venue l",
             nativeQuery = true)
     Page<Venue> findNearestLocations(@Param("lat") double latitude,
