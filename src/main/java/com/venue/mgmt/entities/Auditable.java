@@ -29,7 +29,7 @@ public abstract class Auditable<U> {
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    protected Date creationDate;
+    protected Date createdAt;
 
     @LastModifiedBy
     protected U lastModifiedBy = (U) "customer";
