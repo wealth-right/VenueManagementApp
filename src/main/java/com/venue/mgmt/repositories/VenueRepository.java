@@ -15,14 +15,14 @@ import java.util.Optional;
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     Optional<Venue> findByVenueId(Long venueId);
 
-    @Query(value = "SELECT v.* FROM venuemgmt.venue v " +
+    @Query(value = "SELECT v.* FROM leadmgmt.venue v " +
             "JOIN usermgmt.usermaster m ON v.created_by = m.user_id " +
             "WHERE m.channelcode = :channelCode ",
             nativeQuery = true)
     Page<Venue> findByChannelCode(@Param("channelCode") String channelCode, Pageable pageable);
-
-    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM venuemgmt.venue v " +
-            "LEFT JOIN venuemgmt.lead_registration l ON v.venue_id = l.venue_id " +
+    
+    @Query(value = "SELECT v.*, COUNT(l.lead_id) as lead_count FROM leadmgmt.venue v " +
+            "LEFT JOIN leadmgmt.lead_details l ON v.venue_id = l.venue_id " +
             "WHERE v.is_active = true " +
             "AND (:searchTerm IS NULL OR :searchTerm = '' OR " +
             "     LOWER(v.venue_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
@@ -54,4 +54,10 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
     List<Venue> findAllByCreatedBy(String createdBy);
 
     boolean existsByLatitudeAndLongitude(Double latitude, Double longitude);
+
+    @Query(value = "SELECT v.* FROM leadmgmt.venue v " +
+            "JOIN usermgmt.usermaster m ON v.created_by = m.user_id " +
+            "WHERE m.channelcode = :channelCode ",
+            nativeQuery = true)
+    List<Venue> findByChannelCode(@Param("channelCode") String channelCode);
 }

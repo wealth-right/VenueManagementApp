@@ -14,12 +14,12 @@ import java.util.Set;
 
 @Entity
 @DynamicUpdate
-@Table(name = "lead_registration", schema = "venuemgmt")
+@Table(name = "lead_details", schema = "leadmgmt")
 public class LeadRegistration extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lead_registration_seq")
-    @SequenceGenerator(name = "lead_registration_seq", sequenceName = "venuemgmt.lead_registration_lead_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "lead_id_seq", sequenceName = "leadmgmt.lead_id_seq", allocationSize = 1)
     @Column(name = "lead_id")
     Long leadId;
 
@@ -50,7 +50,7 @@ public class LeadRegistration extends Auditable<String> {
     @ElementCollection
     @CollectionTable(
             name = "lead_existing_products",
-            schema = "venuemgmt",
+            schema = "leadmgmt",
             joinColumns = @JoinColumn(name = "lead_id")
     )
     @Enumerated(EnumType.STRING)

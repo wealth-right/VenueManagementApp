@@ -10,12 +10,12 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "activitytypemaster", schema = "venuemgmt")
+@Table(name = "activitytypemaster", schema = "leadmgmt")
 public class ActivityType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "activity_type_seq")
-    @SequenceGenerator(name = "activity_type_seq", sequenceName = "venuemgmt.activitytypemaster_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "activity_type_seq", sequenceName = "leadmgmt.activitytypemaster_id_seq", allocationSize = 1)
     @Column(name = "id")
     private Long id;
 

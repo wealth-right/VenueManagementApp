@@ -69,7 +69,7 @@ public class VenueFacadeService {
             return null;
         }
         try {
-            String sql = "select * from venuemgmt.activityTypeMaster where activitytype = ?";
+            String sql = "select * from leadmgmt.activityTypeMaster where activitytype = ?";
             return jdbcTemplate.queryForObject(sql, new Object[]{activityType}, (rs, rowNum) -> {
                 ActivityTypeMaster activityTypeMaster = new ActivityTypeMaster();
                 activityTypeMaster.setId(rs.getLong("id"));
@@ -129,12 +129,6 @@ public class VenueFacadeService {
             });
             allVenues.sort(Comparator.comparingDouble(Venue::getDistance)
                     .thenComparing(Venue::getCreationDate, Comparator.reverseOrder()));
-
-//            // Manual pagination
-//            int start = (int) pageable.getOffset();
-//            int end = Math.min((start + pageable.getPageSize()), allVenues.size());
-//            logger.info("Pagination - Start: {}, End: {}", start, end);
-//            List<Venue> pagedList = allVenues.subList(start, end);
 
             return new PageImpl<>(allVenues, pageable, allVenues.size());
         } else {

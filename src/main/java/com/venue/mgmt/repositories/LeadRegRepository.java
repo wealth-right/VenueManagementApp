@@ -49,7 +49,7 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
                                                                           @Param("venueId") Long venueId,
                                                                           @Param("endDate") Date endDate, Pageable pageable);
     
-    @Query(value = "SELECT * FROM venuemgmt.lead_registration l " +
+    @Query(value = "SELECT * FROM leadmgmt.lead_details l " +
            "WHERE l.is_active = true " +
             "AND l.created_by=:userId "+
             "AND l.is_deleted = false " +

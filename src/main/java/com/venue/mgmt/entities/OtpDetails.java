@@ -5,12 +5,12 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "otp_details", schema = "venuemgmt")
+@Table(name = "otp_details", schema = "leadmgmt")
 public class OtpDetails extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "otp_seq")
-    @SequenceGenerator(name = "otp_seq", sequenceName = "venuemgmt.otp_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "otp_seq", sequenceName = "leadmgmt.otp_id_seq", allocationSize = 1)
     @Column(name = "id")
     private Long id;
 

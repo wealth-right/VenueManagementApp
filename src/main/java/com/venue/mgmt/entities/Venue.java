@@ -20,7 +20,7 @@ import java.util.List;
 @Setter
 @ToString
 @Entity
-@Table(name = "venue", schema = "venuemgmt")
+@Table(name = "venue", schema = "leadmgmt")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Venue extends Auditable<String> {
 
@@ -28,7 +28,7 @@ public class Venue extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "venue_seq")
-    @SequenceGenerator(name = "venue_seq", sequenceName = "venuemgmt.venue_id_seq", allocationSize = 1, initialValue =30)
+    @SequenceGenerator(name = "venue_seq", sequenceName = "leadmgmt.venue_id_seq", allocationSize = 1, initialValue =30)
     @Column(name = "venue_id")
     Long venueId;
 
