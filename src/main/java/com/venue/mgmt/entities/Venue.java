@@ -92,7 +92,7 @@ public class Venue extends Auditable<String> {
         LocalDate today = LocalDate.now();
         return (int) leads.stream()
                 .filter(lead -> {
-                    Date creationDate = lead.getCreationDate();
+                    Date creationDate = lead.getCreatedAt();
                     LocalDate creationLocalDate = Instant.ofEpochMilli(creationDate.getTime())
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate();
