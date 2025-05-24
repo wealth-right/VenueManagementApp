@@ -2,6 +2,7 @@ package com.venue.mgmt.services.impl;
 
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.exception.LeadNotFoundException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.request.CustomerRequest;
@@ -250,7 +251,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     @Transactional
     public void deleteLead(Long leadId,String authHeader) {
         LeadRegistration lead = leadRegRepository.findById(leadId)
-                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
+                .orElseThrow(() -> new LeadNotFoundException("Lead not found with id: " + leadId));
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         String customerId = lead.getCustomerId();
         customerServiceClient.deleteCustomer(customerId,authHeader);

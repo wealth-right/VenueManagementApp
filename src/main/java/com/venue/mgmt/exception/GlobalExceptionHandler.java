@@ -40,6 +40,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", "The server is not running or cannot be reached.");
     }
 
+    @ExceptionHandler(LeadNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<Map<String, Object>> handleLeadNotFoundException(LeadNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
+    }
+
     @ExceptionHandler(Throwable.class)
     protected ResponseEntity<Map<String, Object>> handleExceptions(Throwable ex) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
