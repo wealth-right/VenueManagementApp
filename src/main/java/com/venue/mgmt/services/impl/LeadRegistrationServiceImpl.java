@@ -2,6 +2,7 @@ package com.venue.mgmt.services.impl;
 
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.exception.EmailAlreadyExistException;
 import com.venue.mgmt.exception.LeadNotFoundException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
@@ -58,6 +59,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     public LeadRegistration saveLead(LeadRegistration leadRegistration) {
         Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
                 .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
+        leadRegRepository.findByEmail(leadRegistration.getEmail())
+                .ifPresent(existingLead -> {
+                    throw new EmailAlreadyExistException("Lead with email " + leadRegistration.getEmail() + " already exists.");
+                });
         logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
         // Save the lead registration
         leadRegistration.setVenue(venue);
@@ -122,7 +127,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     @Transactional
     public LeadRegistration updateLead(Long leadId, LeadRegistration updatedLead, String authHeader) {
         LeadRegistration existingLead = leadRegRepository.findById(leadId)
-                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
+                .orElseThrow(() -> new LeadNotFoundException("Lead not found with id: " + leadId));
         String userId = request.getAttribute(USER_ID).toString();
         persistCustomerDetails(userId, existingLead.getCustomerId(), updatedLead, authHeader);
         // Update the fields
