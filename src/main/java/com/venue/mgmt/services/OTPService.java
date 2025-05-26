@@ -53,7 +53,7 @@ public class OTPService extends OtpDetailsUtils {
         List<OtpDetails> otpDetailsList = otpDetailsRepository.findByLeadIdAndMobileNo(validateOtpRequest.getLeadId(), validateOtpRequest.getMobileNumber());
         if (!otpDetailsList.isEmpty() && otpDetailsList.size() >= otpPath.getNoOfAttempt()) {
             optionalOtpDetails = otpDetailsList.stream().findFirst();
-            lastCreationDate = CommonUtils.getLocalDateTime(optionalOtpDetails.get().getCreatedAt());
+            lastCreationDate = CommonUtils.getLocalDateTime(optionalOtpDetails.get().getCreationDate());
             long timeSinceLastAttempt = ChronoUnit.MILLIS.between(lastCreationDate, LocalDateTime.now());
             if (timeSinceLastAttempt < otpPath.getBlockTime()) {
                 long remainingTimeMinutes = (otpPath.getBlockTime() - timeSinceLastAttempt) / 60000;
@@ -89,15 +89,15 @@ public class OTPService extends OtpDetailsUtils {
         if (otpDetailsList != null && !otpDetailsList.isEmpty()) {
             // Sort the list by creation date in descending order and get the first record
             OtpDetails latestOtpDetails = otpDetailsList.stream()
-                    .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
+                    .sorted((o1, o2) -> o2.getCreationDate().compareTo(o1.getCreationDate()))
                     .findFirst()
                     .orElse(null);
             // Validate the OTP
             long currentTime = Instant.now().toEpochMilli();
-            long otpCreationTime = latestOtpDetails.getCreatedAt().toInstant().toEpochMilli();
+            long otpCreationTime = latestOtpDetails.getCreationDate().toInstant().toEpochMilli();
             long otpExpiryTime = otpCreationTime + OTP_VALID_DURATION;
             if (latestOtpDetails.getAttempts() >= 3) {
-                LocalDateTime creationDateTime = latestOtpDetails.getCreatedAt().toInstant()
+                LocalDateTime creationDateTime = latestOtpDetails.getCreationDate().toInstant()
                         .atZone(ZoneId.systemDefault()).toLocalDateTime();
                 long timeSinceLastAttempt = ChronoUnit.MILLIS.between(creationDateTime, LocalDateTime.now());
                 if (timeSinceLastAttempt < otpPath.getBlockTime()) {

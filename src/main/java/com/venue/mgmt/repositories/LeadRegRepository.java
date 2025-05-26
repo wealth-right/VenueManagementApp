@@ -66,4 +66,6 @@ public interface LeadRegRepository extends JpaRepository<LeadRegistration, Long>
 
     @Query("select l from LeadRegistration l where l.venue.venueId=:venueId and l.isDeleted=false and l.createdBy=:userId")
     List<LeadRegistration> findByVenueIdAndIsDeletedFalseAndCreatedBy(@Param("venueId") Long venueId, @Param("userId") String userId);
+
+    Optional<Object> findByEmail(String email);
 }

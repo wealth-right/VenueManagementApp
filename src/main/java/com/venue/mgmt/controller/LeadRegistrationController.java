@@ -140,7 +140,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setVerified(lead.getMobileVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
                         leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
-                        leadWithVenueDetails.setCreationDate(lead.getCreatedAt().toString());
+                        leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
                         leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
                         leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
                         leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
@@ -203,7 +203,7 @@ public class LeadRegistrationController {
                         leadWithVenueDetails.setVerified(lead.getMobileVerified());
                         leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
                         leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
-                        leadWithVenueDetails.setCreationDate(lead.getCreatedAt().toString());
+                        leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
                         leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
                         leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
                         leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());

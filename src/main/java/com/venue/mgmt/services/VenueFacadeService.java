@@ -128,7 +128,7 @@ public class VenueFacadeService {
                 logger.info("Venue ID: {}, Distance: {}", venue.getVenueId(), distance);
             });
             allVenues.sort(Comparator.comparingDouble(Venue::getDistance)
-                    .thenComparing(Venue::getCreatedAt, Comparator.reverseOrder()));
+                    .thenComparing(Venue::getCreationDate, Comparator.reverseOrder()));
 
             return new PageImpl<>(allVenues, pageable, allVenues.size());
         } else {
