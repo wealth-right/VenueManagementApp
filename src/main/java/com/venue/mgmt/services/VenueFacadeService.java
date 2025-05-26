@@ -91,7 +91,7 @@ public class VenueFacadeService {
             int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
                     venue.getVenueId(), userId);
             // Count today's leads
-            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreatedAtAndIsDeletedFalse(
+            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
                     venue.getVenueId(), userId, today);
             venue.setLeadCount(leadCount);
             venue.setLeadCountToday(leadCountToday);
