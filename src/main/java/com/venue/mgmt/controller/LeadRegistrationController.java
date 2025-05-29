@@ -4,15 +4,12 @@ import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
-import com.venue.mgmt.request.CustomerRequest;
-import com.venue.mgmt.request.CustomerServiceClient;
-import com.venue.mgmt.request.UserMasterRequest;
+import com.venue.mgmt.request.CustomerDetailsClient;
 import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
-import com.venue.mgmt.services.impl.utils.OccupationCodesUtil;
 import com.venue.mgmt.util.CommonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -28,8 +25,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -59,18 +56,21 @@ public class LeadRegistrationController {
 
     private final UserMgmtResService userMgmtResService;
 
+    private final CustomerDetailsClient customerDetailsClient;
 
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request,UserMgmtResService userMgmtResService) {
+
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request,UserMgmtResService userMgmtResService,CustomerDetailsClient customerDetailsClient) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
         this.request = request;
         this.userMgmtResService = userMgmtResService;
+        this.customerDetailsClient = customerDetailsClient;
     }
 
     @PostMapping
     @Operation(summary = "Create a new lead", description = "Creates a new lead with the provided details and sends OTP for verification")
-//    @Transactional
+    @Transactional
     public ResponseEntity<LeadResponse<LeadRegistration>> createLead(
             @RequestHeader(name = "Authorization") String authHeader,
             @Valid @RequestBody LeadRegistration leadRegistration) {
@@ -78,8 +78,16 @@ public class LeadRegistrationController {
             logger.info("{}", leadRegistration);
             String userId = request.getAttribute(USER_ID).toString();
             // Create CustomerRequest object
-            String customerDetails = leadRegistrationService.persistCustomerDetails(userId, leadRegistration,authHeader);
-            String customerId = CommonUtils.extractCustomerId(customerDetails);
+            String existingCustomerId = customerDetailsClient.getCustomerId(leadRegistration.getMobileNumber());
+            String customerId   = null;
+            if( existingCustomerId != null && !existingCustomerId.isEmpty()) {
+                logger.info("Customer already exists with ID: {}", existingCustomerId);
+                leadRegistration.setCustomerId(existingCustomerId);
+            } else {
+                logger.info("No existing customer found for mobile number: {}", leadRegistration.getMobileNumber());
+                String customerDetails = leadRegistrationService.persistCustomerDetails(userId, leadRegistration,authHeader);
+                 customerId = CommonUtils.extractCustomerId(customerDetails);
+            }
             leadRegistration.setActive(true);
             leadRegistration.setCustomerId(customerId);
             leadRegistration.setCreatedBy(userId);

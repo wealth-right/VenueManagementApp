@@ -37,6 +37,12 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private static final Logger logger = LogManager.getLogger(LeadRegistrationServiceImpl.class);
 
+    private static final String COUNTRY="India";
+
+    private static final String SOURCE = "QuickTapApp";
+
+    private static final String TYPE = "Prospect";
+
     private final LeadRegRepository leadRegRepository;
 
     private final VenueRepository venueRepository;
@@ -59,10 +65,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     public LeadRegistration saveLead(LeadRegistration leadRegistration) {
         Venue venue = venueRepository.findByVenueId(leadRegistration.getVenue().getVenueId())
                 .orElseThrow(() -> new EntityNotFoundException("Venue not found with id: " + leadRegistration.getVenue().getVenueId()));
-        leadRegRepository.findByEmail(leadRegistration.getEmail())
-                .ifPresent(existingLead -> {
-                    throw new EmailAlreadyExistException("Lead with email " + leadRegistration.getEmail() + " already exists.");
-                });
+        if (leadRegistration.getEmail() != null && !leadRegistration.getEmail().trim().isEmpty()) {
+            if (leadRegRepository.findByEmail(leadRegistration.getEmail()).isPresent()) {
+                throw new EmailAlreadyExistException("Lead with email " + leadRegistration.getEmail() + " already exists.");
+            }else{
+                leadRegistration.setEmail(leadRegistration.getEmail());
+            }
+        }else{
+            logger.warn("Email is null or empty for lead registration. Skipping email uniqueness check.");
+            leadRegistration.setEmail(null); // Ensure email is set to null if not provided
+        }
+
         logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
         // Save the lead registration
         leadRegistration.setVenue(venue);
@@ -86,7 +99,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
                                                                                                                      int size, String userId, Long venueId,
                                                                                                                      Date startDate, Date endDate) {
         Sort.Direction direction = sortDirection.contains("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "createdAt");
+        Sort sort = Sort.by(direction, "creationDate");
         Pageable pageable = PageRequest.of(page, size, sort);
 
         if (venueId != null) {
@@ -132,7 +145,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         persistCustomerDetails(userId, existingLead.getCustomerId(), updatedLead, authHeader);
         // Update the fields
         existingLead.setFullName(updatedLead.getFullName());
-        existingLead.setEmail(updatedLead.getEmail());
+        if (updatedLead.getEmail() != null && !updatedLead.getEmail().trim().isEmpty()) {
+            if (leadRegRepository.findByEmail(updatedLead.getEmail()).isPresent()) {
+                throw new EmailAlreadyExistException("Lead with email " + updatedLead.getEmail() + " already exists.");
+            }else{
+                existingLead.setEmail(updatedLead.getEmail());
+                logger.info("Updated email for lead with ID: {}", leadId);
+            }
+        }else{
+            logger.warn("Email is null or empty for lead registration. Skipping email uniqueness check.");
+            existingLead.setEmail(null);
+        }
         existingLead.setMobileNumber(updatedLead.getMobileNumber());
         existingLead.setStatus(updatedLead.getStatus());
         existingLead.setActive(true);
@@ -193,9 +216,9 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         }
         customerRequest.setOccupation(occupation);
         customerRequest.setTaxStatus("01");
-        customerRequest.setCountryOfResidence("India");
-        customerRequest.setSource("QuickTapApp");
-        customerRequest.setCustomertype("Prospect");
+        customerRequest.setCountryOfResidence(COUNTRY);
+        customerRequest.setSource(SOURCE);
+        customerRequest.setCustomertype(TYPE);
         customerRequest.setChannelcode(userMasterDetails.getChannelCode());
         customerRequest.setBranchCode(userMasterDetails.getBranchCode());
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
@@ -243,9 +266,9 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         }
         custRequest.setOccupation(occupation);
         custRequest.setTaxStatus("01");
-        custRequest.setCountryOfResidence("India");
-        custRequest.setSource("QuickTapApp");
-        custRequest.setCustomertype("Prospect");
+        custRequest.setCountryOfResidence(COUNTRY);
+        custRequest.setSource(SOURCE);
+        custRequest.setCustomertype(TYPE);
         custRequest.setChannelcode(userMasterDetails.getChannelCode());
         custRequest.setBranchCode(userMasterDetails.getBranchCode());
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
