@@ -86,15 +86,21 @@ public class VenueFacadeService {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-        Date today = calendar.getTime();
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date startOfDay = calendar.getTime();
+
+        calendar.add(Calendar.DATE, 1);
+        Date endOfDay = calendar.getTime();
         for (Venue venue : venues) {
             int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
                     venue.getVenueId(), userId);
             // Count today's leads
-            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
-                    venue.getVenueId(), userId, today);
+            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateBetweenAndIsDeletedFalse(
+                    venue.getVenueId(), userId, startOfDay, endOfDay);
+            logger.info("Before update - Venue ID: {}, leadCountToday: {}", venue.getVenueId(), venue.getLeadCountToday());
             venue.setLeadCount(leadCount);
             venue.setLeadCountToday(leadCountToday);
+            logger.info("Venue ID: {}, Total Leads: {}, Today's Leads: {}", venue.getVenueId(), leadCount, leadCountToday);
         }
     }
 

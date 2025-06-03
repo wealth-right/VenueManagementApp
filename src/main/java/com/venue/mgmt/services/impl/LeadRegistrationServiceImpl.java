@@ -28,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 
@@ -75,7 +76,12 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             logger.warn("Email is null or empty for lead registration. Skipping email uniqueness check.");
             leadRegistration.setEmail(null); // Ensure email is set to null if not provided
         }
-
+        if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
+            leadRegistration.setFirstName(leadRegistration.getFullName().split(" ")[0]);
+            leadRegistration.setMiddleName(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
+            leadRegistration.setLastName(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
+        }
+        leadRegistration.setPhoneNumber(leadRegistration.getMobileNumber());
         logger.info("Starting to save lead with Venue Name: {}", venue.getVenueName());
         // Save the lead registration
         leadRegistration.setVenue(venue);
@@ -145,17 +151,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         persistCustomerDetails(userId, existingLead.getCustomerId(), updatedLead, authHeader);
         // Update the fields
         existingLead.setFullName(updatedLead.getFullName());
-        if (updatedLead.getEmail() != null && !updatedLead.getEmail().trim().isEmpty()) {
-            if (leadRegRepository.findByEmail(updatedLead.getEmail()).isPresent()) {
-                throw new EmailAlreadyExistException("Lead with email " + updatedLead.getEmail() + " already exists.");
-            }else{
-                existingLead.setEmail(updatedLead.getEmail());
-                logger.info("Updated email for lead with ID: {}", leadId);
-            }
-        }else{
-            logger.warn("Email is null or empty for lead registration. Skipping email uniqueness check.");
-            existingLead.setEmail(null);
-        }
+        existingLead.setEmail(updatedLead.getEmail());
         existingLead.setMobileNumber(updatedLead.getMobileNumber());
         existingLead.setStatus(updatedLead.getStatus());
         existingLead.setActive(true);

@@ -88,18 +88,6 @@ public class Venue extends Auditable<String> {
     @Transient
     private int leadCountToday;
 
-    public int getLeadCountToday() {
-        LocalDate today = LocalDate.now();
-        return (int) leads.stream()
-                .filter(lead -> {
-                    Date creationDate = lead.getCreationDate();
-                    LocalDate creationLocalDate = Instant.ofEpochMilli(creationDate.getTime())
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate();
-                    return creationLocalDate.equals(today);
-                })
-                .count();
-    }
 
     public void setLeadCountToday(int leadCountToday) {
         this.leadCountToday = leadCountToday;

@@ -58,6 +58,8 @@ public class LeadRegistrationController {
 
     private final CustomerDetailsClient customerDetailsClient;
 
+    private static final String SOURCE = "QuickTapApp";
+
 
 
     public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request,UserMgmtResService userMgmtResService,CustomerDetailsClient customerDetailsClient) {
@@ -91,6 +93,7 @@ public class LeadRegistrationController {
             leadRegistration.setActive(true);
             leadRegistration.setCustomerId(customerId);
             leadRegistration.setCreatedBy(userId);
+            leadRegistration.setSource(SOURCE);
             LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
 
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
@@ -236,7 +239,7 @@ public class LeadRegistrationController {
                     })
                     .toList();
             ApiResponse<List<LeadWithVenueDetails>> response = new ApiResponse<>();
-            response.setStatusCode(200);
+              response.setStatusCode(200);
             response.setStatusMsg(SUCCESS);
             response.setErrorMsg(null);
             response.setResponse(leadWithVenueDetailsList);
