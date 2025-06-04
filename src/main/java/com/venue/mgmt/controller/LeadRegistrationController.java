@@ -46,6 +46,7 @@ import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 public class LeadRegistrationController {
 
     private static final Logger logger = LogManager.getLogger(LeadRegistrationController.class);
+    private static final String NEW_STAGE = "NEW";
 
     private final LeadRegistrationService leadRegistrationService;
 
@@ -94,6 +95,7 @@ public class LeadRegistrationController {
             leadRegistration.setCustomerId(customerId);
             leadRegistration.setCreatedBy(userId);
             leadRegistration.setSource(SOURCE);
+            leadRegistration.setStage(NEW_STAGE);
             LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
 
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
