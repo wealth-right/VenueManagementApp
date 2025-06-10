@@ -28,7 +28,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 
