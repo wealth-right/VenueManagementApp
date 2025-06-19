@@ -207,6 +207,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         registration.setPan(entity.getPan());
         registration.setAadhaar(entity.getAadhaar());
         registration.setStage(entity.getStage());
+        registration.setExistingProducts(entity.getExistingProducts());
         registration.setScore(entity.getScore());
         registration.setTemperature(entity.getTemperature());
         registration.setStatus(entity.getStatus());
@@ -221,7 +222,11 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         registration.setActive(entity.getIsActive());
         registration.setDeleted(entity.getIsDeleted());
         registration.setMobileVerified(entity.getIsMobileVerified());
-        // Reconstruct address string from AddressDetailsEntity (optional)
+        registration.setCreationDate(entity.getCreationDate());
+        registration.setLastModifiedDate(entity.getLastModifiedDate());
+        registration.setCreatedBy(entity.getCreatedBy());
+        registration.setLastModifiedBy(entity.getLastModifiedBy());
+        registration.setIncomeRange(entity.getIncomeRange());
         AddressDetailsEntity address = entity.getAddressDetailsEntity();
         if (address != null) {
             String fullAddress = String.join(", ",
@@ -270,6 +275,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             leadEntity = new LeadDetailsEntity();
             String userId = request.getAttribute(USER_ID).toString();
             leadEntity.setCreatedBy(userId);
+            leadEntity.setLastModifiedBy(userId);
             leadEntity.setIsActive(true);
             leadEntity.setIsDeleted(false);
             leadEntity.setIsMobileVerified(false);
@@ -300,6 +306,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         leadEntity.setSource(leadRegistration.getSource());
         leadEntity.setLifeStage(leadRegistration.getLifeStage());
         leadEntity.setCreatedAt(LocalDateTime.now());
+        leadEntity.setCreationDate(new Date());
         leadEntity.setLastModifiedAt(new Date());
         leadEntity.setLineOfBusiness(leadRegistration.getLineOfBusiness());
         leadEntity.setLifeStageMaritalStatus(leadRegistration.getMaritalStatus());
@@ -373,7 +380,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         persistCustomerDetails(userId, existingLead.getCustomerId(), updatedLead, authHeader);
         // Update the fields
         updateNameFields(existingLeadEntity, updatedLead);
-        updateLeadFields(existingLeadEntity, updatedLead);
+        updateLeadFields(existingLeadEntity, updatedLead,userId);
         updateVenueIfRequired(existingLeadEntity, updatedLead);
         updateOrCreateAddress(existingLeadEntity, updatedLead);
 
@@ -418,13 +425,13 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         }
     }
 
-    private void updateLeadFields(LeadDetailsEntity entity, LeadRegistration dto) {
+    private void updateLeadFields(LeadDetailsEntity entity, LeadRegistration dto,String userId) {
         entity.setEmail(dto.getEmail());
         entity.setMobileNumber(dto.getMobileNumber());
         entity.setStatus(dto.getStatus());
         entity.setIsActive(dto.getActive());
         entity.setAge(dto.getAge());
-        entity.setLastModifiedBy(dto.getLastModifiedBy());
+        entity.setLastModifiedBy(userId);
         entity.setLastModifiedDate(new Date());
         entity.setOccupation(dto.getOccupation());
         entity.setDob(dto.getDob());
@@ -525,6 +532,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             leadWithVenueDetails.setLastModifiedDate(
                     lead.getLastModifiedDate() != null ? lead.getLastModifiedDate().toString() : LocalDateTime.now().toString()
             );
+
             leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
             leadWithVenueDetails.setLifeStage(lead.getLifeStage());
             leadWithVenueDetails.setGender(lead.getGender());
@@ -532,6 +540,30 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
             leadWithVenueDetails.setDeleted(lead.getDeleted());
             leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
+
+            Optional<AddressDetailsEntity> addressOpt = addressDetailsRepository.findByLeadId(lead.getLeadId());
+            if (addressOpt.isPresent()) {
+                AddressDetailsEntity address = addressOpt.get();
+                List<String> parts = new ArrayList<>();
+                if (address.getPermanentAddressLine1() != null && !address.getPermanentAddressLine1().trim().isEmpty())
+                    parts.add(address.getPermanentAddressLine1().trim());
+                if (address.getPermanentAddressLine2() != null && !address.getPermanentAddressLine2().trim().isEmpty())
+                    parts.add(address.getPermanentAddressLine2().trim());
+                if (address.getPermanentCity() != null && !address.getPermanentCity().trim().isEmpty())
+                    parts.add(address.getPermanentCity().trim());
+                if (address.getPermanentState() != null && !address.getPermanentState().trim().isEmpty())
+                    parts.add(address.getPermanentState().trim());
+                if (address.getPermanentCountry() != null && !address.getPermanentCountry().trim().isEmpty())
+                    parts.add(address.getPermanentCountry().trim());
+
+                String fullAddress = String.join(", ", parts);
+                leadWithVenueDetails.setAddress(fullAddress);
+                leadWithVenueDetails.setPinCode(address.getPermanentPincode());
+            } else {
+                // fallback to legacy string-based address
+                leadWithVenueDetails.setAddress(lead.getAddress());
+                leadWithVenueDetails.setPinCode(lead.getPinCode());
+            }
             if (lead.getVenue() != null && lead.getVenue().getVenueId() != null) {
                 Optional<Venue> venueOpt = venueRepository.findByVenueId(lead.getVenue().getVenueId());
                 if (venueOpt.isPresent()) {
