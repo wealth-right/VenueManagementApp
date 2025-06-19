@@ -9,7 +9,6 @@ import com.venue.mgmt.response.ApiResponse;
 import com.venue.mgmt.response.LeadResponse;
 import com.venue.mgmt.response.PaginationDetails;
 import com.venue.mgmt.services.LeadRegistrationService;
-import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.util.CommonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -46,7 +45,6 @@ import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 public class LeadRegistrationController {
 
     private static final Logger logger = LogManager.getLogger(LeadRegistrationController.class);
-    private static final String NEW_STAGE = "NEW";
 
     private final LeadRegistrationService leadRegistrationService;
 
@@ -55,19 +53,17 @@ public class LeadRegistrationController {
 
     private final HttpServletRequest request;
 
-    private final UserMgmtResService userMgmtResService;
 
     private final CustomerDetailsClient customerDetailsClient;
 
-    private static final String SOURCE = "QuickTapApp";
 
 
 
-    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository, HttpServletRequest request,UserMgmtResService userMgmtResService,CustomerDetailsClient customerDetailsClient) {
+    public LeadRegistrationController(LeadRegistrationService leadRegistrationService, VenueRepository venueRepository,
+                                      HttpServletRequest request, CustomerDetailsClient customerDetailsClient) {
         this.leadRegistrationService = leadRegistrationService;
         this.venueRepository = venueRepository;
         this.request = request;
-        this.userMgmtResService = userMgmtResService;
         this.customerDetailsClient = customerDetailsClient;
     }
 
@@ -80,7 +76,6 @@ public class LeadRegistrationController {
             logger.info("VenueManagementApp - Inside create Lead Method");
             logger.info("{}", leadRegistration);
             String userId = request.getAttribute(USER_ID).toString();
-            // Create CustomerRequest object
             String existingCustomerId = customerDetailsClient.getCustomerId(leadRegistration.getMobileNumber());
             String customerId   = null;
             if( existingCustomerId != null && !existingCustomerId.isEmpty()) {
@@ -90,14 +85,9 @@ public class LeadRegistrationController {
                 logger.info("No existing customer found for mobile number: {}", leadRegistration.getMobileNumber());
                 String customerDetails = leadRegistrationService.persistCustomerDetails(userId, leadRegistration,authHeader);
                  customerId = CommonUtils.extractCustomerId(customerDetails);
+                 leadRegistration.setCustomerId(customerId);
             }
-            leadRegistration.setActive(true);
-            leadRegistration.setCustomerId(customerId);
-            leadRegistration.setCreatedBy(userId);
-            leadRegistration.setSource(SOURCE);
-            leadRegistration.setStage(NEW_STAGE);
             LeadRegistration savedLead = leadRegistrationService.saveLead(leadRegistration);
-
             LeadResponse<LeadRegistration> response = new LeadResponse<>();
             response.setStatusCode(200);
             response.setStatusMsg(SUCCESS);
@@ -127,70 +117,28 @@ public class LeadRegistrationController {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date start = startDate != null ? formatter.parse(startDate) : null;
         Date end = endDate != null ? formatter.parse(endDate) : null;
-            if (start != null && end != null && start.equals(end)) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(end);
-                calendar.add(Calendar.DAY_OF_MONTH, 1);
-                end = calendar.getTime();
-            }
-            Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRangeAndIsDeletedFalse
-                    (pageable.getSort().toString(), pageable.getPageNumber(), pageable.getPageSize(), userId, venueId, start, end);
+        if (start != null && end != null && start.equals(end)) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(end);
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+            end = calendar.getTime();
+        }
+        Page<LeadRegistration> leads = leadRegistrationService.getAllLeadsSortedByCreationDateAndCreatedByAndVenueIdAndDateRangeAndIsDeletedFalse
+                (pageable.getSort().toString(), pageable.getPageNumber(), pageable.getPageSize(), userId, venueId, start, end);
+        List<LeadWithVenueDetails> leadWithVenueDetailsList = leadRegistrationService.mapToLeadWithVenueDetailsList(leads);
+        ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
+        response.setStatusCode(200);
+        response.setStatusMsg(SUCCESS);
+        response.setErrorMsg(null);
+        response.setResponse(leadWithVenueDetailsList);
 
-            List<LeadWithVenueDetails> leadWithVenueDetailsList = leads.stream()
-                    .map(lead -> {
-                        LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
-                        leadWithVenueDetails.setLeadId(lead.getLeadId());
-                        leadWithVenueDetails.setFullName(lead.getFullName());
-                        leadWithVenueDetails.setAge(lead.getAge());
-                        leadWithVenueDetails.setOccupation(lead.getOccupation());
-                        leadWithVenueDetails.setMobileNumber(lead.getMobileNumber());
-                        leadWithVenueDetails.setAddress(lead.getAddress());
-                        leadWithVenueDetails.setEmail(lead.getEmail());
-                        leadWithVenueDetails.setPinCode(lead.getPinCode());
-                        leadWithVenueDetails.setActive(lead.getActive());
-                        leadWithVenueDetails.setPinCode(lead.getPinCode());
-                        leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
-                        leadWithVenueDetails.setVerified(lead.getMobileVerified());
-                        leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
-                        leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
-                        leadWithVenueDetails.setCreationDate(lead.getCreationDate().toString());
-                        leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
-                        leadWithVenueDetails.setLastModifiedDate(lead.getLastModifiedDate().toString());
-                        leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
-                        leadWithVenueDetails.setLifeStage(lead.getLifeStage());
-                        leadWithVenueDetails.setGender(lead.getGender());
-                        leadWithVenueDetails.setRemarks(lead.getRemarks());
-                        leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
-                        leadWithVenueDetails.setDeleted(lead.getDeleted());
-                        leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
-                        Venue leadVenue = venueRepository.findByVenueId(lead.getVenue().getVenueId()).orElse(null);
-                        if (leadVenue != null) {
-                            LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
-                            venueDetails.setVenueId(leadVenue.getVenueId());
-                            venueDetails.setVenueName(leadVenue.getVenueName());
-                            venueDetails.setLatitude(leadVenue.getLatitude());
-                            venueDetails.setLongitude(leadVenue.getLongitude());
-                            venueDetails.setActive(leadVenue.getIsActive());
-                            venueDetails.setAddress(leadVenue.getAddress());
-                            leadWithVenueDetails.setVenueDetails(venueDetails);
-                        }
-                        return leadWithVenueDetails;
-                    })
-                    .toList();
+        PaginationDetails paginationDetails = new PaginationDetails();
+        paginationDetails.setCurrentPage(leads.getNumber() + 1);
+        paginationDetails.setTotalRecords(leads.getTotalElements());
+        paginationDetails.setTotalPages(leads.getTotalPages());
+        response.setPagination(paginationDetails);
 
-            ApiResponse<Page<LeadWithVenueDetails>> response = new ApiResponse<>();
-            response.setStatusCode(200);
-            response.setStatusMsg(SUCCESS);
-            response.setErrorMsg(null);
-            response.setResponse(leadWithVenueDetailsList);
-
-            PaginationDetails paginationDetails = new PaginationDetails();
-            paginationDetails.setCurrentPage(leads.getNumber() + 1);
-            paginationDetails.setTotalRecords(leads.getTotalElements());
-            paginationDetails.setTotalPages(leads.getTotalPages());
-            response.setPagination(paginationDetails);
-
-            return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/search")

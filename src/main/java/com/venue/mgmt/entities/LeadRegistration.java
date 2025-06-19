@@ -18,8 +18,7 @@ import java.util.Set;
 public class LeadRegistration extends Auditable<String> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lead_id_seq")
-    @SequenceGenerator(name = "lead_id_seq", sequenceName = "leadmgmt.lead_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lead_id")
     Long leadId;
 

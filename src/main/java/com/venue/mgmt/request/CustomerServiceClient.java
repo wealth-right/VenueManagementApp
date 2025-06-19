@@ -16,10 +16,10 @@ public class CustomerServiceClient {
 
     private static final Logger logger = LogManager.getLogger(CustomerServiceClient.class);
 
-    String saveCustomerUrl="https://test-devapi.wealth-right.com/Customer/api/CreateAndUpdateProspect";
+    String saveCustomerUrl="https://uat-apis.wealth-right.com/Customer/api/CreateAndUpdateProspect";
 
-    String deleteCustomerUrl="https://test-devapi.wealth-right.com/Customer/api/Deletecustomer/";
-    String getUserDetailsUrl="https://test-devapi.wealth-right.com/Usermgt/api/GetUserDetails/";
+    String deleteCustomerUrl="https://uat-apis.wealth-right.com/Customer/api/Deletecustomer/";
+    String getUserDetailsUrl="https://uat-apis.wealth-right.com/Usermgt/api/GetUserDetails/";
 
     public CustomerServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
