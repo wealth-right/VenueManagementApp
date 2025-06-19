@@ -461,7 +461,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             return null;
         }
         CustomerRequest customerRequest = new CustomerRequest();
-        if ((!leadRegistration.getFullName().isEmpty()) && leadRegistration.getFullName() != null) {
+        if (leadRegistration.getFullName() != null && (!leadRegistration.getFullName().isEmpty())) {
             customerRequest.setFirstname(leadRegistration.getFullName().split(" ")[0]);
             customerRequest.setMiddlename(leadRegistration.getFullName().split(" ").length > 2 ? leadRegistration.getFullName().split(" ")[1] : "");
             customerRequest.setLastname(leadRegistration.getFullName().split(" ").length > 1 ? leadRegistration.getFullName().split(" ")[leadRegistration.getFullName().split(" ").length - 1] : "");
