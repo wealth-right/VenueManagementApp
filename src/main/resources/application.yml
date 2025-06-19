@@ -1,16 +1,16 @@
 server:
-  port: 8081
+  port: 8080
   servlet:
-    context-path: /api
+    context-path: /api/venue
 
 
 spring:
   application:
     name: Venue Management App
   datasource:
-    url: jdbc:postgresql://34.93.33.180:5432/summitpg?currentSchema=leadmgmt
-    username: postgres
-    password: "N-}=&ZL=(So,+3ay"
+    url: jdbc:postgresql://34.47.157.92:5432/summitpg?currentSchema=leadmgmt
+    username: NvestSQL
+    password: ']A<at$NI9$j.|%z%'
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -56,6 +56,13 @@ google:
 jwt:
   secret: "Wc2cFuYp1GyeeIJlcRkufv1OIuhOYnCSaGFXIXdZMfPKPCAn644dWJNCwPxZHzF7duQ4J3ncgM8WpKzetTl4KA=="
 
+venue:
+  send-Otp: "https://uat-apis.wealth-right.com/api/ValidateUser"
+  verify-Otp: "https://uat-apis.wealth-right.com/api/verifyuserotp"
+  save-customer: "https://uat-apis.wealth-right.com/Customer/api/CreateAndUpdateProspect"
+  delete-customer: "https://uat-apis.wealth-right.com/Customer/api/Deletecustomer/"
+  user-details: "https://uat-apis.wealth-right.com/Usermgt/api/GetUserDetails/"
+  excluded-urls: "/api/venue/venue-app/v1/auth/sendOtp,/api/venue/venue-app/v1/auth/verify-otp"
 
 
 

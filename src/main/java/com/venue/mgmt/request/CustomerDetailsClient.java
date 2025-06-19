@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CustomerDetailsClient {
 
@@ -17,16 +19,22 @@ public class CustomerDetailsClient {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public String getCustomerId(String mobileNumber){
-        if( mobileNumber == null || mobileNumber.isEmpty()) {
+    public String getCustomerId(String mobileNumber) {
+        if (mobileNumber == null || mobileNumber.isEmpty()) {
             return null;
         }
         try {
-            String sql = "select customerid from customerservice.customer where mobileno = ?";
-            return jdbcTemplate.queryForObject(sql, new Object[]{mobileNumber},String.class);
-        }catch (Exception e) {
+            String sql = "SELECT customerid FROM customerservice.customer WHERE mobileno = ?";
+            List<String> results = jdbcTemplate.query(
+                    sql,
+                    (rs, rowNum) -> rs.getString("customerid"),
+                    mobileNumber
+            );
+            return results.isEmpty() ? null : results.get(0);
+        } catch (Exception e) {
             logger.error("Error while fetching customer ID for mobile number: {}", mobileNumber, e);
             return null;
         }
     }
+
 }
