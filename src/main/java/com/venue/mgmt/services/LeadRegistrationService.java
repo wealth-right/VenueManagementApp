@@ -1,10 +1,10 @@
 package com.venue.mgmt.services;
 
 import com.venue.mgmt.dto.LeadWithVenueDetails;
-import com.venue.mgmt.entities.LeadDetailsEntity;
 import com.venue.mgmt.entities.LeadRegistration;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+
 import java.util.Date;
 import java.util.List;
 
@@ -21,6 +21,8 @@ public interface LeadRegistrationService {
     void deleteLead(Long leadId,String authHeader);
 
     String persistCustomerDetails(String userId, LeadRegistration leadRegistration, String authHeader);
+
+    List<LeadWithVenueDetails> searchLeadsWithDetails(String query, String userId);
 
     List<LeadWithVenueDetails> mapToLeadWithVenueDetailsList(Page<LeadRegistration> leads);
 

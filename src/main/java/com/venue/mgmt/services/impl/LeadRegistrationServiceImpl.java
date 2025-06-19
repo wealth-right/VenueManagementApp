@@ -499,6 +499,58 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         return entity.getBody();
     }
 
+    @Override
+    public List<LeadWithVenueDetails> searchLeadsWithDetails(String query, String userId) {
+        List<LeadRegistration> leads = simpleSearchLeads(query, userId);
+        List<LeadWithVenueDetails> result = new ArrayList<>();
+        for (LeadRegistration lead : leads) {
+            LeadWithVenueDetails leadWithVenueDetails = new LeadWithVenueDetails();
+            leadWithVenueDetails.setLeadId(lead.getLeadId());
+            leadWithVenueDetails.setFullName(lead.getFullName());
+            leadWithVenueDetails.setAge(lead.getAge());
+            leadWithVenueDetails.setOccupation(lead.getOccupation());
+            leadWithVenueDetails.setMobileNumber(lead.getMobileNumber());
+            leadWithVenueDetails.setAddress(lead.getAddress()); // Using string field as no address parsing logic is required here
+            leadWithVenueDetails.setEmail(lead.getEmail());
+            leadWithVenueDetails.setPinCode(lead.getPinCode());
+            leadWithVenueDetails.setActive(lead.getActive());
+            leadWithVenueDetails.setLineOfBusiness(lead.getLineOfBusiness());
+            leadWithVenueDetails.setVerified(lead.getMobileVerified());
+            leadWithVenueDetails.setEitherMobileOrEmailPresent(lead.isEitherMobileOrEmailPresent());
+            leadWithVenueDetails.setCreatedBy(lead.getCreatedBy());
+            leadWithVenueDetails.setCreationDate(
+                    lead.getCreationDate() != null ? lead.getCreationDate().toString() : null
+            );
+            leadWithVenueDetails.setLastModifiedBy(lead.getLastModifiedBy());
+            leadWithVenueDetails.setLastModifiedDate(
+                    lead.getLastModifiedDate() != null ? lead.getLastModifiedDate().toString() : LocalDateTime.now().toString()
+            );
+            leadWithVenueDetails.setIncomeRange(lead.getIncomeRange());
+            leadWithVenueDetails.setLifeStage(lead.getLifeStage());
+            leadWithVenueDetails.setGender(lead.getGender());
+            leadWithVenueDetails.setRemarks(lead.getRemarks());
+            leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
+            leadWithVenueDetails.setDeleted(lead.getDeleted());
+            leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
+            if (lead.getVenue() != null && lead.getVenue().getVenueId() != null) {
+                Optional<Venue> venueOpt = venueRepository.findByVenueId(lead.getVenue().getVenueId());
+                if (venueOpt.isPresent()) {
+                    Venue leadVenue = venueOpt.get();
+                    LeadWithVenueDetails.VenueDetails venueDetails = new LeadWithVenueDetails.VenueDetails();
+                    venueDetails.setVenueId(leadVenue.getVenueId());
+                    venueDetails.setVenueName(leadVenue.getVenueName());
+                    venueDetails.setLatitude(leadVenue.getLatitude());
+                    venueDetails.setLongitude(leadVenue.getLongitude());
+                    venueDetails.setActive(leadVenue.getIsActive());
+                    venueDetails.setAddress(leadVenue.getAddress());
+                    leadWithVenueDetails.setVenueDetails(venueDetails);
+                }
+            }
+            result.add(leadWithVenueDetails);
+        }
+        return result;
+    }
+
     private void persistCustomerDetails(String userId, String customerId,
                                         LeadRegistration leadRegistration, String authHeader) {
         UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
