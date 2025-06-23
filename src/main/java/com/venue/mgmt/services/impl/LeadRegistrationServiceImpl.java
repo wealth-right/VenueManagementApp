@@ -132,6 +132,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
             leadWithVenueDetails.setGender(lead.getGender());
             leadWithVenueDetails.setRemarks(lead.getRemarks());
             leadWithVenueDetails.setMaritalStatus(lead.getMaritalStatus());
+            leadWithVenueDetails.setLifeStageMaritalStatus(lead.getMaritalStatus());
             leadWithVenueDetails.setDeleted(lead.getDeleted());
             leadWithVenueDetails.setExistingProducts(lead.getExistingProducts());
 
@@ -206,6 +207,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         registration.setEducation(entity.getEducation());
         registration.setPan(entity.getPan());
         registration.setAadhaar(entity.getAadhaar());
+        registration.setLifeStageMaritalStatus(entity.getLifeStageMaritalStatus());
         registration.setStage(entity.getStage());
         registration.setExistingProducts(entity.getExistingProducts());
         registration.setScore(entity.getScore());

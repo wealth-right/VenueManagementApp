@@ -91,6 +91,9 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "marital_status")
     String maritalStatus;
 
+    @Transient
+    private String lifeStageMaritalStatus;
+
     @Column(name = "lead_score")
     private Integer score;
 
@@ -154,6 +157,14 @@ public class LeadRegistration extends Auditable<String> {
     @JoinColumn(name = "venue_id", nullable = false)
     @JsonBackReference
     private Venue venue;
+
+    public String getLifeStageMaritalStatus() {
+        return lifeStageMaritalStatus;
+    }
+
+    public void setLifeStageMaritalStatus(String lifeStageMaritalStatus) {
+        this.lifeStageMaritalStatus = lifeStageMaritalStatus;
+    }
 
     public String getPhoneNumber() {
         return phoneNumber;

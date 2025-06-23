@@ -30,9 +30,11 @@ public class LeadWithVenueDetails {
     private String gender;
     private String remarks;
     private String maritalStatus;
+    private String lifeStageMaritalStatus;
     private boolean deleted;
     private Set<ProductType> existingProducts;
     private VenueDetails venueDetails;
+
 
     // Getters and setters
     @Getter
