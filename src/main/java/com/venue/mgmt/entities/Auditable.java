@@ -1,10 +1,7 @@
 package com.venue.mgmt.entities;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +26,7 @@ public abstract class Auditable<U> {
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "created_at")
     protected Date creationDate;
 
     @LastModifiedBy

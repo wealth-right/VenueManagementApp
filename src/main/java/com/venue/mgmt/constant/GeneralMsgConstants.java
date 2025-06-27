@@ -9,6 +9,13 @@ public class GeneralMsgConstants {
 
     public static final String POSTAL_CODE="postal_code";
     public static final String LOCALITY="locality";
+
+    public static final String RESULT="results";
+
+    public static final String COUNTRY_CODE="+91";
+    public static final String MALE="Male";
+    public static final String FEMALE="Female";
+
     public static  final String SUB_LOCALITY="sublocality_level_1";
     public static final String STATE="administrative_area_level_1";
 

@@ -14,12 +14,11 @@ import java.util.Set;
 
 @Entity
 @DynamicUpdate
-@Table(name = "lead_registration", schema = "venuemgmt")
+@Table(name = "lead_details", schema = "leadmgmt")
 public class LeadRegistration extends Auditable<String> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lead_registration_seq")
-    @SequenceGenerator(name = "lead_registration_seq", sequenceName = "lead_registration_lead_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lead_id")
     Long leadId;
 
@@ -43,6 +42,9 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "mobile_number")
     String mobileNumber;
 
+    @Column(name="phone_number")
+    String phoneNumber;
+
     @Column(name="customer_id")
     String customerId;
 
@@ -50,7 +52,7 @@ public class LeadRegistration extends Auditable<String> {
     @ElementCollection
     @CollectionTable(
             name = "lead_existing_products",
-            schema = "venuemgmt",
+            schema = "leadmgmt",
             joinColumns = @JoinColumn(name = "lead_id")
     )
     @Enumerated(EnumType.STRING)
@@ -83,8 +85,63 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "remarks")
     String remarks;
 
+    @Column(name="source")
+    String source;
+
     @Column(name = "marital_status")
     String maritalStatus;
+
+    @Transient
+    private String lifeStageMaritalStatus;
+
+    @Column(name = "lead_score")
+    private Integer score;
+
+    @Column(name = "lead_temperature")
+    private String temperature;
+
+    @Column(name = "title")
+    private String title;
+
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "middle_name")
+    private String middleName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "nationality")
+    private String nationality;
+
+    @Column(name = "tax_status")
+    private String taxStatus;
+
+    @Column(name = "education")
+    private String education;
+
+    @Column(name = "aadhaar")
+    private String aadhaar;
+
+    @Column(name = "pan")
+    private String pan;
+
+    @Column(name = "stage")
+    private String stage;
+
+    @Column(name = "country_code")
+    private String countryCode;
+
+    @Column(name = "role_code")
+    private String roleCode;
+
+    @Column(name = "branch_code")
+    private String branchCode;
+
+    @Column(name = "channel_code")
+    private String channelCode;
+
 
     @Column(name = "is_active")
     Boolean isActive = true;
@@ -92,16 +149,166 @@ public class LeadRegistration extends Auditable<String> {
     @Column(name = "is_deleted")
     Boolean isDeleted = false;
 
-    @Column(name = "is_verified")
-    Boolean isVerified = false;
-
-//    private Long venueId; // Add this field
+    @Column(name = "is_mobile_verified")
+    Boolean isMobileVerified = false;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id", nullable = false)
     @JsonBackReference
     private Venue venue;
+
+    public String getLifeStageMaritalStatus() {
+        return lifeStageMaritalStatus;
+    }
+
+    public void setLifeStageMaritalStatus(String lifeStageMaritalStatus) {
+        this.lifeStageMaritalStatus = lifeStageMaritalStatus;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
+    }
+
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public void setNationality(String nationality) {
+        this.nationality = nationality;
+    }
+
+    public void setTaxStatus(String taxStatus) {
+        this.taxStatus = taxStatus;
+    }
+
+    public void setEducation(String education) {
+        this.education = education;
+    }
+
+    public void setAadhaar(String aadhaar) {
+        this.aadhaar = aadhaar;
+    }
+
+    public void setPan(String pan) {
+        this.pan = pan;
+    }
+
+    public void setStage(String stage) {
+        this.stage = stage;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public void setRoleCode(String roleCode) {
+        this.roleCode = roleCode;
+    }
+
+    public void setBranchCode(String branchCode) {
+        this.branchCode = branchCode;
+    }
+
+    public void setChannelCode(String channelCode) {
+        this.channelCode = channelCode;
+    }
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public String getTemperature() {
+        return temperature;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getMiddleName() {
+        return middleName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getNationality() {
+        return nationality;
+    }
+
+    public String getTaxStatus() {
+        return taxStatus;
+    }
+
+    public String getEducation() {
+        return education;
+    }
+
+    public String getAadhaar() {
+        return aadhaar;
+    }
+
+    public String getPan() {
+        return pan;
+    }
+
+    public String getStage() {
+        return stage;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public String getRoleCode() {
+        return roleCode;
+    }
+
+    public String getBranchCode() {
+        return branchCode;
+    }
+
+    public String getChannelCode() {
+        return channelCode;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSource() {
+        return source;
+    }
 
     public Long getLeadId() {
         return leadId;
@@ -255,12 +462,12 @@ public class LeadRegistration extends Auditable<String> {
         isDeleted = deleted;
     }
 
-    public Boolean getVerified() {
-        return isVerified;
+    public Boolean getMobileVerified() {
+        return isMobileVerified;
     }
 
-    public void setVerified(Boolean verified) {
-        isVerified = verified;
+    public void setMobileVerified(Boolean verified) {
+        isMobileVerified = verified;
     }
 
     public Venue getVenue() {

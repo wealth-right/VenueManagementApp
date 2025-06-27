@@ -19,7 +19,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
+    @ExceptionHandler(VenueAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<Map<String, Object>> handleVenueAlreadyExistsException(VenueAlreadyExistsException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -34,6 +38,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceAccessException.class)
     public ResponseEntity<Map<String, Object>> handleResourceAccessException(ResourceAccessException ex) {
         return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", "The server is not running or cannot be reached.");
+    }
+
+    @ExceptionHandler(LeadNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<Map<String, Object>> handleLeadNotFoundException(LeadNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
+    }
+
+    @ExceptionHandler(EmailAlreadyExistException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailAlreadyExistException(EmailAlreadyExistException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Email Already Exists.", ex.getMessage());
     }
 
     @ExceptionHandler(Throwable.class)
@@ -76,10 +91,17 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(status, "Internal Server Error", message);
     }
 
+
     @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<Map<String, Object>> handleAlreadyExistsException(AlreadyExistsException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, "Conflict", ex.getReason());
+    }
+
+    @ExceptionHandler(VenueNotSavedException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<Map<String, Object>> handleVenueNotSavedException(VenueNotSavedException ex) {
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", ex.getMessage());
     }
 
     @ExceptionHandler(InvalidOtpException.class)
@@ -101,4 +123,5 @@ public class GlobalExceptionHandler {
         responseBody.put("response", null);
         return new ResponseEntity<>(responseBody, status);
     }
+
 }

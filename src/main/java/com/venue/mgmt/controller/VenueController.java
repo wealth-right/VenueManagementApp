@@ -3,9 +3,12 @@ package com.venue.mgmt.controller;
 import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.dto.VenueDTO;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.exception.VenueAlreadyExistsException;
 import com.venue.mgmt.repositories.LeadRegRepository;
+import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.response.*;
 import com.venue.mgmt.services.GooglePlacesService;
+import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.services.VenueFacadeService;
 import com.venue.mgmt.services.VenueService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,21 +42,23 @@ public class VenueController {
     private final GooglePlacesService googleMapsService;
 
     private final VenueFacadeService venueFacadeService;
+    private final UserMgmtResService userMgmtResService;
 
 
     public VenueController(VenueService venueService, HttpServletRequest request,LeadRegRepository leadRegRepository,
                            GooglePlacesService googleMapsService,
-                           VenueFacadeService venueFacadeService){
+                           VenueFacadeService venueFacadeService, UserMgmtResService userMgmtResService) {
         this.venueService = venueService;
         this.request = request;
         this.leadRegRepository = leadRegRepository;
         this.googleMapsService = googleMapsService;
         this.venueFacadeService = venueFacadeService;
+        this.userMgmtResService = userMgmtResService;
     }
 
     @PostMapping
     public ResponseEntity<VenueResponse<Venue>> createVenue(
-            @Valid @RequestBody Venue venue) {
+            @Valid @RequestBody Venue venue) throws VenueAlreadyExistsException {
         logger.info("VenueManagementApp - Inside create Venue Method");
 
         String userId = (String) request.getAttribute(USER_ID);
@@ -114,12 +119,15 @@ public class VenueController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Venue>>> getAllVenues(
             @RequestParam(value = "location", required = false) String location,
-            @PageableDefault(sort = "creationDate", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
+            @PageableDefault(sort = "created_at", direction = Sort.Direction.DESC, page = 1, size = 20) Pageable pageable) {
         logger.info("VenueManagementApp - Inside get All Venues Method");
         try {
             String userId = (String) request.getAttribute(USER_ID);
+            UserMasterRequest userMasterDetails = userMgmtResService.getUserMasterDetails(userId);
+//            extract the channelCode from the userMasterDetails
+            String channelCode = userMasterDetails.getChannelCode();
             pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
-            Page<Venue> venues = venueFacadeService.getVenuesByLocationOrDefault(location, userId, pageable);
+            Page<Venue> venues = venueFacadeService.getVenuesByLocationOrDefault(location, channelCode, pageable);
             venueFacadeService.calculateTotalLeadsCount(venues.getContent(), userId, leadRegRepository);
             ResponseEntity<Page<Venue>> responseEntity = ResponseEntity.ok(venues);
             ApiResponse<Page<Venue>> response = new ApiResponse<>();
@@ -191,7 +199,7 @@ public class VenueController {
 
     @GetMapping("/sorted")
     public ResponseEntity<Page<Venue>> getAllVenuesSorted(
-            @RequestParam(defaultValue = "creationDate") String sortBy,
+            @RequestParam(defaultValue = "created_at") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
@@ -201,11 +209,14 @@ public class VenueController {
         return ResponseEntity.ok(venues);
     }
 
+
+
     @PutMapping("/{venueId}")
     public ResponseEntity<VenueResponse<Venue>> updateVenue(
             @PathVariable Long venueId,
             @Valid @RequestBody Venue venue) {
         try {
+
            venueFacadeService.fetchAndSetAddressDetails(venue);
             // Update the venue in the database
             Venue updatedVenue = venueService.updateVenue(venueId, venue);

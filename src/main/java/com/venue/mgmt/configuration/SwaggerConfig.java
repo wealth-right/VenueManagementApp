@@ -41,12 +41,16 @@ public class SwaggerConfig {
                 .url("http://localhost:8081/api")
                 .description("Dev Server");
 
+        Server finalProductionServer= new Server()
+                .url("https://edge.wealth-right.com/api/quicktap")
+                .description("Final Production Server");
+
         // Define security scheme name
         final String securitySchemeName = "bearerAuth";
 
         return new OpenAPI()
                 // Configure servers
-                .servers(List.of(localServer,productionServer,uatServer,devServer))
+                .servers(List.of(localServer,productionServer,uatServer,devServer,finalProductionServer))
 
                 // Add security requirement
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

@@ -1,20 +1,20 @@
 package com.venue.mgmt.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.venue.mgmt.controller.VenueController;
 import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
+import com.venue.mgmt.request.ActivityTypeMaster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
+import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 import java.util.*;
 
-import static com.venue.mgmt.constant.GeneralMsgConstants.*;
 
 @Service
 public class VenueFacadeService {
@@ -24,21 +24,23 @@ public class VenueFacadeService {
     private final VenueRepository venueRepos;
 
     private final VenueService venueService;
+    private final JdbcTemplate jdbcTemplate;
 
     private static final Logger logger = LogManager.getLogger(VenueFacadeService.class);
 
-    public VenueFacadeService(GooglePlacesService googleMapsService, VenueRepository venueRepos,VenueService venueService) {
+    public VenueFacadeService(GooglePlacesService googleMapsService, VenueRepository venueRepos,VenueService venueService,JdbcTemplate jdbcTemplate) {
         this.googleMapsService = googleMapsService;
         this.venueRepos = venueRepos;
         this.venueService=venueService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void fetchAndSetAddressDetails(Venue venue) throws Exception {
         JsonNode geocodeResponse = googleMapsService.geocodeAddress(venue.getAddress());
-        if (geocodeResponse == null || !geocodeResponse.has("results") || geocodeResponse.path("results").isEmpty()) {
+        if (geocodeResponse == null || !geocodeResponse.has(RESULT) || geocodeResponse.path(RESULT).isEmpty()) {
             return;
         }
-        JsonNode addressComponents = geocodeResponse.path("results").get(0).path("address_components");
+        JsonNode addressComponents = geocodeResponse.path(RESULT).get(0).path("address_components");
         for (JsonNode component : addressComponents) {
             List<String> types = new ArrayList<>();
             component.path("types").forEach(type -> types.add(type.asText()));
@@ -58,26 +60,51 @@ public class VenueFacadeService {
                 venue.setCountry(component.path(LONG_NAME).asText());
             }
         }
+        venue.setActivityType(venue.getActivityType());
+        logger.info("Activity type: {}", venue.getActivityType());
     }
 
+    public ActivityTypeMaster getActivityTypeById(String activityType){
+        if (activityType == null || activityType.isEmpty()) {
+            return null;
+        }
+        try {
+            String sql = "select * from leadmgmt.activityTypeMaster where activitytype = ?";
+            return jdbcTemplate.queryForObject(sql, new Object[]{activityType}, (rs, rowNum) -> {
+                ActivityTypeMaster activityTypeMaster = new ActivityTypeMaster();
+                activityTypeMaster.setId(rs.getLong("id"));
+                activityTypeMaster.setActivityType(rs.getString("activitytype"));
+                activityTypeMaster.setStatus(rs.getBoolean("isactive"));
+                return activityTypeMaster;
+            });
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public void calculateTotalLeadsCount(List<Venue> venues, String userId, LeadRegRepository leadRegRepository) {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-        Date today = calendar.getTime();
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date startOfDay = calendar.getTime();
+
+        calendar.add(Calendar.DATE, 1);
+        Date endOfDay = calendar.getTime();
         for (Venue venue : venues) {
             int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
                     venue.getVenueId(), userId);
             // Count today's leads
-            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
-                    venue.getVenueId(), userId, today);
+            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateBetweenAndIsDeletedFalse(
+                    venue.getVenueId(), userId, startOfDay, endOfDay);
+            logger.info("Before update - Venue ID: {}, leadCountToday: {}", venue.getVenueId(), venue.getLeadCountToday());
             venue.setLeadCount(leadCount);
             venue.setLeadCountToday(leadCountToday);
+            logger.info("Venue ID: {}, Total Leads: {}, Today's Leads: {}", venue.getVenueId(), leadCount, leadCountToday);
         }
     }
 
-    public Page<Venue> getVenuesByLocationOrDefault(String location, String userId, Pageable pageable) {
+    public Page<Venue> getVenuesByLocationOrDefault(String location, String channelCode, Pageable pageable) {
         Double lat = null;
         Double lon = null;
 
@@ -88,7 +115,7 @@ public class VenueFacadeService {
                 lat = Double.parseDouble(parts[0].trim());
                 lon = Double.parseDouble(parts[1].trim());
             } catch (Exception e) {
-                logger.warn("Invalid location format. Expected 'lat,lon'. Got: " + location);
+                logger.warn("Invalid location format", e);
             }
         }
 
@@ -96,7 +123,7 @@ public class VenueFacadeService {
             final double finalLat = lat;
             final double finalLon = lon;
             logger.info("Latitude and Longitude provided — applying KNN logic");
-            List<Venue> allVenues = venueRepos.findAll();
+            List<Venue> allVenues = venueRepos.findByChannelCode(channelCode);
 
             logger.info("Total venues fetched: {}", allVenues.size());
 
@@ -106,22 +133,17 @@ public class VenueFacadeService {
                 venue.setDistance(distance); // store for sorting
                 logger.info("Venue ID: {}, Distance: {}", venue.getVenueId(), distance);
             });
-            allVenues.sort(Comparator.comparingDouble(Venue::getDistance));
+            allVenues.sort(Comparator.comparingDouble(Venue::getDistance)
+                    .thenComparing(Venue::getCreationDate, Comparator.reverseOrder()));
 
-            // Manual pagination
-            int start = (int) pageable.getOffset();
-            int end = Math.min((start + pageable.getPageSize()), allVenues.size());
-            logger.info("Pagination - Start: {}, End: {}", start, end);
-            List<Venue> pagedList = allVenues.subList(start, end);
-
-            return new PageImpl<>(pagedList, pageable, allVenues.size());
+            return new PageImpl<>(allVenues, pageable, allVenues.size());
         } else {
-            // Default sorting by creationDate
+            // Default sorting by createdAt
             return venueService.getAllVenuesSortedByCreationDate(
                     pageable.getSort().toString(),
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    userId
+                    channelCode
             );
         }
     }

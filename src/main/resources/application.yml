@@ -1,33 +1,87 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/quicktap
+
+
 spring:
   application:
     name: Venue Management App
   datasource:
-    url: jdbc:postgresql://34.100.165.71:5432/lead_marketing_app
+    url: jdbc:postgresql://10.51.13.4:5432/summitpg?defaultSchema=leadmgmt
     username: postgres
-    password: UATPass@1234
+    password: "<Cck9%^)EfPbD+E]"
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
     hikari:
-        maximum-pool-size: 5
-        connection-timeout: 5000
+      maximum-pool-size: 5
+      connection-timeout: 5000
 
-server:
-    port: 8081
-    servlet:
-        context-path: /api
 
+
+customer-service:
+  otp:
+    otp-length: 6
+    otp-expiry: 300000
+    no-of-attempt: 3
+    otp-resend: 6000
+    wrong-otp-attempt: 3
+    block-time: 1800000
+    netcore:
+      url: "https://test1bulksms.mytoday.com/BulkSms/SingleMsgApi"
+      username: "7282020240"
+      password: "*Smsapi1"
+      feed-id: "392976"
+      template-id: "1007390385133824496"
+      entity-id: "1001530297444558180"
+      shorts: "0"
+      async: "0"
+      sender-id: "WLTHRT"
+      connect-timeout: 10000
+      read-timeout: 10000
+
+#Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+  endpoint:
+    health:
+      show-details: always
+
+info:
+  app:
+    name: "Venue Management Application"
+    version: "1.0.0"
+    description: "Venue Management API"
+
+
+google:
+  api:
+    key: AIzaSyAtLlSmjPfqIsxUOkFOl71bZEyc7yQOkUo
 
 
 jwt:
-    secret: ${JWT_SECRET:your-256-bit-secret-key-here-minimum-32-characters}
-    header: Authorization
+  secret: "Wc2cFuYp1GyeeIJlcRkufv1OIuhOYnCSaGFXIXdZMfPKPCAn644dWJNCwPxZHzF7duQ4J3ncgM8WpKzetTl4KA=="
+
+venue:
+  send-Otp: "https://api.wealth-right.com/api/ValidateUser"
+  verify-Otp: "https://api.wealth-right.com/api/verifyuserotp"
+  save-customer: "https://api.wealth-right.com/Customer/api/CreateAndUpdateProspect"
+  delete-customer: "https://api.wealth-right.com/Customer/api/Deletecustomer/"
+  user-details: "https://api.wealth-right.com/Usermgt/api/GetUserDetails/"
+  excluded-urls: "/api/venue/venue-app/v1/auth/sendOtp,/api/venue/venue-app/v1/auth/verify-otp"
+
+
+
 
 logging:
   level:
