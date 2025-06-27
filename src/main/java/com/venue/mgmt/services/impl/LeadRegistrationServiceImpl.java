@@ -1,5 +1,6 @@
 package com.venue.mgmt.services.impl;
 
+import com.venue.mgmt.dto.LeadScoringDTO;
 import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.AddressDetailsEntity;
 import com.venue.mgmt.entities.LeadDetailsEntity;
@@ -25,9 +26,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -49,6 +51,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private static final String TYPE = "Prospect";
     private static final String NEW_STAGE = "NEW";
     private static final String LEAD_NOT_FOUND = "Lead not found with id: ";
+    private static final String LEAD_SCORE_URL = "https://sit-services.wealth-right.com/api/lmsapi/api/v1/public/lead-score";
 
     private final LeadRegRepository leadRegRepository;
 
@@ -59,19 +62,22 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final UserMgmtResService userMgmtResService;
 
     private final AddressDetailsRepository addressDetailsRepository;
+    private final RestTemplate restTemplate;
 
 
 
     private final HttpServletRequest request;
 
     public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService,
-                                       HttpServletRequest request, LeadDetailsRepository leadDetailsRepository, AddressDetailsRepository  addressDetailsRepository) {
+                                       HttpServletRequest request, LeadDetailsRepository leadDetailsRepository,
+                                       AddressDetailsRepository  addressDetailsRepository,RestTemplate restTemplate) {
         this.leadRegRepository = leadRegRepository;
         this.venueRepository = venueRepository;
         this.userMgmtResService = userMgmtResService;
         this.request = request;
         this.leadDetailsRepository = leadDetailsRepository;
         this.addressDetailsRepository = addressDetailsRepository;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -96,6 +102,29 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         address.setLeadDetailsEntity(leadEntity); // bidirectional link
         leadEntity.setAddressDetailsEntity(address);
         logger.info("Saving lead registration...");
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<LeadDetailsEntity> requestEntity = new HttpEntity<>(leadEntity, headers);
+
+            ResponseEntity<LeadScoringDTO> response = restTemplate.exchange(
+                    LEAD_SCORE_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    LeadScoringDTO.class
+            );
+            if (response.getStatusCode().is2xxSuccessful()) {
+                LeadScoringDTO scoring = response.getBody();
+                if(scoring!=null){
+                    leadEntity.setScore(scoring.getLeadScore());
+                    leadEntity.setTemperature(scoring.getLeadTemperature());
+                }
+            }
+        } catch (RestClientException ex) {
+            log.error("Failed to fetch lead score: {}", ex.getMessage());
+            // Optional: set default score/temperature or handle fallback
+        }
         LeadDetailsEntity save = leadDetailsRepository.save(leadEntity);
         return convertToLeadRegistration(save, venue);
     }

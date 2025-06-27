@@ -8,7 +8,7 @@ spring:
   application:
     name: Venue Management App
   datasource:
-    url: jdbc:postgresql://10.51.13.4:5432/summitpg?defaultSchema=leadmgmt
+    url: jdbc:postgresql://10.51.13.4:5432/summitpg
     username: postgres
     password: "<Cck9%^)EfPbD+E]"
     driver-class-name: org.postgresql.Driver
