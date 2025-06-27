@@ -22,8 +22,8 @@ import java.util.Map;
 public class NotificationServiceImpl implements INotificationService {
 
     private static final Logger logger = LogManager.getLogger(NotificationServiceImpl.class);
-    String sendOtpUrl="https://uat-apis.wealth-right.com/api/ValidateUser";
-    String validateOtpUrl="https://uat-apis.wealth-right.com/api/verifyuserotp";
+    String sendOtpUrl="https://api.wealth-right.com/api/ValidateUser";
+    String validateOtpUrl="https://api.wealth-right.com/api/verifyuserotp";
     private final LeadRegRepository leadRegRepository;
     private final RestTemplate restTemplate;
     private final UserMgmtResService userMgmtResService;

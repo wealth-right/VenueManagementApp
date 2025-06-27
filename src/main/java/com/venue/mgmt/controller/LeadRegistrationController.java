@@ -2,7 +2,6 @@ package com.venue.mgmt.controller;
 
 import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.LeadRegistration;
-import com.venue.mgmt.entities.Venue;
 import com.venue.mgmt.repositories.VenueRepository;
 import com.venue.mgmt.request.CustomerDetailsClient;
 import com.venue.mgmt.response.ApiResponse;
