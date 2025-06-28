@@ -1,16 +1,16 @@
 server:
   port: 8080
   servlet:
-    context-path: /api/quicktap
+    context-path: /api/venue
 
 
 spring:
   application:
     name: Venue Management App
   datasource:
-    url: jdbc:postgresql://10.51.13.4:5432/summitpg
-    username: postgres
-    password: "<Cck9%^)EfPbD+E]"
+    url: jdbc:postgresql://34.47.157.92:5432/summitpg
+    username: NvestSQL
+    password: "]A<at$NI9$j.|%z%"
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -47,22 +47,6 @@ customer-service:
       connect-timeout: 10000
       read-timeout: 10000
 
-#Actuator Configuration
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "health,info"
-  endpoint:
-    health:
-      show-details: always
-
-info:
-  app:
-    name: "Venue Management Application"
-    version: "1.0.0"
-    description: "Venue Management API"
-
 
 google:
   api:
@@ -73,11 +57,11 @@ jwt:
   secret: "Wc2cFuYp1GyeeIJlcRkufv1OIuhOYnCSaGFXIXdZMfPKPCAn644dWJNCwPxZHzF7duQ4J3ncgM8WpKzetTl4KA=="
 
 venue:
-  send-Otp: "https://api.wealth-right.com/api/ValidateUser"
-  verify-Otp: "https://api.wealth-right.com/api/verifyuserotp"
-  save-customer: "https://api.wealth-right.com/Customer/api/CreateAndUpdateProspect"
-  delete-customer: "https://api.wealth-right.com/Customer/api/Deletecustomer/"
-  user-details: "https://api.wealth-right.com/Usermgt/api/GetUserDetails/"
+  send-Otp: "https://api-uat.wealth-right.com/api/ValidateUser"
+  verify-Otp: "https://api-uat.wealth-right.com/api/verifyuserotp"
+  save-customer: "https://api-uat.wealth-right.com/Customer/api/CreateAndUpdateProspect"
+  delete-customer: "https://api-uat.wealth-right.com/Customer/api/Deletecustomer/"
+  user-details: "https://api-uat.wealth-right.com/Usermgt/api/GetUserDetails/"
   excluded-urls: "/api/venue/venue-app/v1/auth/sendOtp,/api/venue/venue-app/v1/auth/verify-otp"
 
 
