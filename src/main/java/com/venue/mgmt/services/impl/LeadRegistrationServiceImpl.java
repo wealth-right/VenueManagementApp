@@ -414,7 +414,27 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         updateLeadFields(existingLeadEntity, updatedLead,userId);
         updateVenueIfRequired(existingLeadEntity, updatedLead);
         updateOrCreateAddress(existingLeadEntity, updatedLead);
-
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<LeadDetailsEntity> requestEntity = new HttpEntity<>(existingLeadEntity, headers);
+            ResponseEntity<LeadScoringDTO> response = restTemplate.exchange(
+                    LEAD_SCORE_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    LeadScoringDTO.class
+            );
+            if (response.getStatusCode().is2xxSuccessful()) {
+                LeadScoringDTO scoring = response.getBody();
+                if(scoring!=null) {
+                    existingLeadEntity.setScore(scoring.getLeadScore());
+                    existingLeadEntity.setTemperature(scoring.getLeadTemperature());
+                }
+            }
+        } catch (RestClientException ex) {
+            log.error("Failed to fetch lead score: {}", ex.getMessage());
+            // Optional: set default score/temperature or handle fallback
+        }
         LeadDetailsEntity savedLead = leadDetailsRepository.save(existingLeadEntity);
         logger.info("Updated lead with ID: {}", savedLead.getId());
         return convertToLeadRegistration(savedLead, savedLead.getVenue());
