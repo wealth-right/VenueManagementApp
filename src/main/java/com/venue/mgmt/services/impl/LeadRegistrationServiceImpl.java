@@ -47,12 +47,14 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private static final String COUNTRY="India";
 
-    private static final String SOURCE = "QuickTapApp";
+    private static final String SOURCE = "QuickTap";
 
     private static final String TYPE = "Prospect";
     private static final String NEW_STAGE = "NEW";
     private static final String LEAD_NOT_FOUND = "Lead not found with id: ";
     private static final String LEAD_SCORE_URL = "https://sit-services.wealth-right.com/api/lmsapi/api/v1/public/lead-score";
+    private static final String ENRICHING = "ENRICHING";
+    private static final String NEWLY_CREATED = "NEW";
 
     private final LeadRegRepository leadRegRepository;
 
@@ -65,13 +67,16 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final AddressDetailsRepository addressDetailsRepository;
     private final RestTemplate restTemplate;
 
+    private final LeadScoringService leadScoringService;
+
 
 
     private final HttpServletRequest request;
 
     public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService,
                                        HttpServletRequest request, LeadDetailsRepository leadDetailsRepository,
-                                       AddressDetailsRepository  addressDetailsRepository,RestTemplate restTemplate) {
+                                       AddressDetailsRepository  addressDetailsRepository,RestTemplate restTemplate,
+                                       LeadScoringService leadScoringService) {
         this.leadRegRepository = leadRegRepository;
         this.venueRepository = venueRepository;
         this.userMgmtResService = userMgmtResService;
@@ -79,6 +84,7 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         this.leadDetailsRepository = leadDetailsRepository;
         this.addressDetailsRepository = addressDetailsRepository;
         this.restTemplate = restTemplate;
+        this.leadScoringService = leadScoringService;
     }
 
     @Override
@@ -103,6 +109,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         address.setLeadDetailsEntity(leadEntity); // bidirectional link
         leadEntity.setAddressDetailsEntity(address);
         logger.info("Saving lead registration...");
+        int score = leadScoringService.calculateLeadScore(leadEntity);
+        leadEntity.setScore(score);
+        leadEntity.setTemperature(leadScoringService.determineTemperature(score));
+        if(score>15 && (leadEntity.getMobileNumber()!= null &&
+                !leadEntity.getMobileNumber().isEmpty()) && (leadEntity.getAge()!= null
+                && leadEntity.getAge() > 18)) {
+            leadEntity.setStage(ENRICHING);
+        } else {
+            leadEntity.setStage(NEWLY_CREATED);
+
+        }
         LeadDetailsEntity save = leadDetailsRepository.save(leadEntity);
         return convertToLeadRegistration(save, venue);
     }

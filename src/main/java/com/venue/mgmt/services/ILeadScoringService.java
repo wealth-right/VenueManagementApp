@@ -1,7 +1,7 @@
 package com.venue.mgmt.services;
 
-import com.venue.mgmt.dto.LeadDetails;
 import com.venue.mgmt.dto.LeadScoreResponseDTO;
+import com.venue.mgmt.entities.LeadDetailsEntity;
 
 public interface ILeadScoringService {
 
@@ -11,7 +11,7 @@ public interface ILeadScoringService {
      * @param leadDetails The lead to score
      * @return The calculated score
      */
-    int calculateLeadScore(LeadDetails leadDetails);
+    int calculateLeadScore(LeadDetailsEntity leadDetails);
 
     /**
      * Determines the appropriate temperature category based on score.
@@ -23,5 +23,5 @@ public interface ILeadScoringService {
 
     void refreshLeadScoreAndTemperature();
 
-    public LeadScoreResponseDTO calculateLeadScoreAndTemperature(LeadDetails leadDetails);
+    public LeadScoreResponseDTO calculateLeadScoreAndTemperature(LeadDetailsEntity leadDetails);
 }

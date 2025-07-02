@@ -38,7 +38,7 @@ public class LeadScoringService implements ILeadScoringService {
 
     /** {@inheritDoc} */
     @Override
-    public int calculateLeadScore(LeadDetails leadDetails) {
+    public int calculateLeadScore(LeadDetailsEntity leadDetails) {
 
         List<RuleMaster> allRules = ruleMasterService.getAllRules();
         log.debug("Calculating score for lead: {}", leadDetails.getEmail());
@@ -47,7 +47,7 @@ public class LeadScoringService implements ILeadScoringService {
 
         List<String> actions = List.of("Link Clicked", "Each Email Opened", "Each Form Filled");
         // Add points for different scoring factors
-        score += calculateDemographicScore(leadDetails.getDob(), leadDetails.getOccupation(), allRules);
+        score += calculateDemographicScore(leadDetails.getAge(), leadDetails.getOccupation(), allRules);
         score += calculateScoreBasedOnSource(leadDetails.getSource(), allRules);
         score += calculateScoreBasedOnEngagement(actions, allRules);
         //    score+=calculateSpecificEngagementScore(
@@ -58,7 +58,7 @@ public class LeadScoringService implements ILeadScoringService {
         //        actions,
         //        allRules);
 
-//        score += calculateScoreBasedOnRecency(leadDetails);
+        score += calculateScoreBasedOnRecency(leadDetails);
 
         log.debug("Calculated score {} for lead: {}", score, leadDetails.getEmail());
         return score;
@@ -124,7 +124,7 @@ public class LeadScoringService implements ILeadScoringService {
     }
 
     @Override
-    public LeadScoreResponseDTO calculateLeadScoreAndTemperature(LeadDetails leadDetails) {
+    public LeadScoreResponseDTO calculateLeadScoreAndTemperature(LeadDetailsEntity leadDetails) {
         log.debug("Calculating lead score and temperature for: {}", leadDetails.getEmail());
         int score = calculateLeadScore(leadDetails);
         String temperature = determineTemperature(score);
@@ -340,17 +340,16 @@ public class LeadScoringService implements ILeadScoringService {
     /**
      * Calculates score component based on age.
      *
-     * @param dob Date of birth
+     * @param age age of the lead
      * @return Score points for age
      */
     private int calculateDemographicScore(
-            LocalDate dob, String occupation, List<RuleMaster> allRules) {
-        if (dob == null || allRules == null || allRules.isEmpty()) {
+            int age, String occupation, List<RuleMaster> allRules) {
+        if (allRules == null || allRules.isEmpty()) {
             return 0;
         }
         try {
             int score = 0;
-            int age = Period.between(dob, LocalDate.now()).getYears();
             score += calculateAllDemographichCriteriaScore(allRules, age, occupation);
 
             return score;
