@@ -69,7 +69,7 @@ public class VenueFacadeService {
             return null;
         }
         try {
-            String sql = "select * from venuemgmt.activityTypeMaster where activitytype = ?";
+            String sql = "select * from leadmgmt.activityTypeMaster where activitytype = ?";
             return jdbcTemplate.queryForObject(sql, new Object[]{activityType}, (rs, rowNum) -> {
                 ActivityTypeMaster activityTypeMaster = new ActivityTypeMaster();
                 activityTypeMaster.setId(rs.getLong("id"));
@@ -86,19 +86,25 @@ public class VenueFacadeService {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-        Date today = calendar.getTime();
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date startOfDay = calendar.getTime();
+
+        calendar.add(Calendar.DATE, 1);
+        Date endOfDay = calendar.getTime();
         for (Venue venue : venues) {
             int leadCount = leadRegRepository.countByVenue_VenueIdAndCreatedByAndIsDeletedFalse(
                     venue.getVenueId(), userId);
             // Count today's leads
-            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateAndIsDeletedFalse(
-                    venue.getVenueId(), userId, today);
+            int leadCountToday = leadRegRepository.countByVenue_VenueIdAndCreatedByAndCreationDateBetweenAndIsDeletedFalse(
+                    venue.getVenueId(), userId, startOfDay, endOfDay);
+            logger.info("Before update - Venue ID: {}, leadCountToday: {}", venue.getVenueId(), venue.getLeadCountToday());
             venue.setLeadCount(leadCount);
             venue.setLeadCountToday(leadCountToday);
+            logger.info("Venue ID: {}, Total Leads: {}, Today's Leads: {}", venue.getVenueId(), leadCount, leadCountToday);
         }
     }
 
-    public Page<Venue> getVenuesByLocationOrDefault(String location, String userId, Pageable pageable) {
+    public Page<Venue> getVenuesByLocationOrDefault(String location, String channelCode, Pageable pageable) {
         Double lat = null;
         Double lon = null;
 
@@ -117,7 +123,7 @@ public class VenueFacadeService {
             final double finalLat = lat;
             final double finalLon = lon;
             logger.info("Latitude and Longitude provided — applying KNN logic");
-            List<Venue> allVenues = venueRepos.findAll();
+            List<Venue> allVenues = venueRepos.findByChannelCode(channelCode);
 
             logger.info("Total venues fetched: {}", allVenues.size());
 
@@ -127,22 +133,17 @@ public class VenueFacadeService {
                 venue.setDistance(distance); // store for sorting
                 logger.info("Venue ID: {}, Distance: {}", venue.getVenueId(), distance);
             });
-            allVenues.sort(Comparator.comparingDouble(Venue::getDistance));
+            allVenues.sort(Comparator.comparingDouble(Venue::getDistance)
+                    .thenComparing(Venue::getCreationDate, Comparator.reverseOrder()));
 
-            // Manual pagination
-            int start = (int) pageable.getOffset();
-            int end = Math.min((start + pageable.getPageSize()), allVenues.size());
-            logger.info("Pagination - Start: {}, End: {}", start, end);
-            List<Venue> pagedList = allVenues.subList(start, end);
-
-            return new PageImpl<>(pagedList, pageable, allVenues.size());
+            return new PageImpl<>(allVenues, pageable, allVenues.size());
         } else {
-            // Default sorting by creationDate
+            // Default sorting by createdAt
             return venueService.getAllVenuesSortedByCreationDate(
                     pageable.getSort().toString(),
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    userId
+                    channelCode
             );
         }
     }

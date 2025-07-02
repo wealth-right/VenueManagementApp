@@ -1,27 +1,25 @@
 package com.venue.mgmt.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Getter
 @Setter
 @ToString
 @Entity
-@Table(name = "venue", schema = "venuemgmt")
+@Table(name = "venue", schema = "leadmgmt")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Venue extends Auditable<String> {
 
@@ -29,7 +27,7 @@ public class Venue extends Auditable<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "venue_seq")
-    @SequenceGenerator(name = "venue_seq", sequenceName = "venue_id_seq", allocationSize = 1, initialValue =30)
+    @SequenceGenerator(name = "venue_seq", sequenceName = "leadmgmt.venue_id_seq", allocationSize = 1, initialValue =30)
     @Column(name = "venue_id")
     Long venueId;
 
@@ -89,18 +87,6 @@ public class Venue extends Auditable<String> {
     @Transient
     private int leadCountToday;
 
-    public int getLeadCountToday() {
-        LocalDate today = LocalDate.now();
-        return (int) leads.stream()
-                .filter(lead -> {
-                    Date creationDate = lead.getCreationDate();
-                    LocalDate creationLocalDate = Instant.ofEpochMilli(creationDate.getTime())
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate();
-                    return creationLocalDate.equals(today);
-                })
-                .count();
-    }
 
     public void setLeadCountToday(int leadCountToday) {
         this.leadCountToday = leadCountToday;

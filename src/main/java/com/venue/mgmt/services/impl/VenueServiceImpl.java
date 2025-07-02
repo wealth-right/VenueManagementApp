@@ -3,6 +3,7 @@ package com.venue.mgmt.services.impl;
 import com.venue.mgmt.constant.ErrorMsgConstants;
 import com.venue.mgmt.entities.LeadRegistration;
 import com.venue.mgmt.entities.Venue;
+import com.venue.mgmt.exception.VenueAlreadyExistsException;
 import com.venue.mgmt.exception.VenueNotSavedException;
 import com.venue.mgmt.repositories.LeadRegRepository;
 import com.venue.mgmt.repositories.VenueRepository;
@@ -33,22 +34,36 @@ public class VenueServiceImpl implements VenueService {
 
     private final LeadRegRepository leadRegRepository;
 
+    private final VenueRepository venueRepos;
 
-    public VenueServiceImpl(VenueRepository venueRepository, LeadRegRepository leadRegRepository) {
+
+    public VenueServiceImpl(VenueRepository venueRepository, LeadRegRepository leadRegRepository,VenueRepository venueRepos) {
         this.venueRepository = venueRepository;
         this.leadRegRepository = leadRegRepository;
+        this.venueRepos = venueRepos;
     }
 
     @Override
     @Transactional
-    public Venue saveVenue(Venue venue) {
+    public Venue saveVenue(Venue venue) throws VenueAlreadyExistsException {
         try {
             logger.info("Saving new venue: {}", venue.getVenueName());
             venue.setIsActive(true);
+            if (venue.getLatitude() != null && venue.getLongitude() != null) {
+                boolean venueExists = venueRepos.existsByLatitudeAndLongitude(venue.getLatitude(), venue.getLongitude());
+                if (venueExists) {
+                        throw new VenueAlreadyExistsException("Duplicate Activity Point Present.");
+                }
+            }
             return venueRepository.save(venue);
-        } catch (Exception e) {
-                logger.error("Error saving venue: {}", e.getMessage());
-            throw new VenueNotSavedException("Failed to save venue "+ venue.getVenueName());
+        }
+        catch(VenueAlreadyExistsException e){
+            logger.error("Venue already exists: {}", e.getMessage());
+            throw e;
+        }
+        catch (Exception e) {
+            logger.error("Error saving venue: {}", e.getMessage());
+            throw new VenueNotSavedException("Failed to save venue " + venue.getVenueName());
         }
     }
 
@@ -157,12 +172,12 @@ public class VenueServiceImpl implements VenueService {
     }
 
     @Override
-    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String userId) {
+    public Page<Venue> getAllVenuesSortedByCreationDate(String sortDirection, int page, int size, String channelCode) {
         Sort.Direction direction = sortDirection.contains("DESC") ?
                 Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, "creationDate");
+        Sort sort = Sort.by(direction, "created_at");
         Pageable pageable = PageRequest.of(page, size, sort);
-        return venueRepository.findAll(pageable);
+        return venueRepository.findByChannelCode(channelCode, pageable);
     }
 
 }
