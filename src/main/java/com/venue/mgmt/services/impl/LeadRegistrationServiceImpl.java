@@ -1,6 +1,7 @@
 package com.venue.mgmt.services.impl;
 
 import com.venue.mgmt.dto.LeadScoringDTO;
+import com.venue.mgmt.dto.LeadDetails;
 import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.AddressDetailsEntity;
 import com.venue.mgmt.entities.LeadDetailsEntity;
@@ -102,32 +103,10 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         address.setLeadDetailsEntity(leadEntity); // bidirectional link
         leadEntity.setAddressDetailsEntity(address);
         logger.info("Saving lead registration...");
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            HttpEntity<LeadDetailsEntity> requestEntity = new HttpEntity<>(leadEntity, headers);
-
-            ResponseEntity<LeadScoringDTO> response = restTemplate.exchange(
-                    LEAD_SCORE_URL,
-                    HttpMethod.POST,
-                    requestEntity,
-                    LeadScoringDTO.class
-            );
-            if (response.getStatusCode().is2xxSuccessful()) {
-                LeadScoringDTO scoring = response.getBody();
-                if(scoring!=null){
-                    leadEntity.setScore(scoring.getLeadScore());
-                    leadEntity.setTemperature(scoring.getLeadTemperature());
-                }
-            }
-        } catch (RestClientException ex) {
-            log.error("Failed to fetch lead score: {}", ex.getMessage());
-            // Optional: set default score/temperature or handle fallback
-        }
         LeadDetailsEntity save = leadDetailsRepository.save(leadEntity);
         return convertToLeadRegistration(save, venue);
     }
+
 
 
     public List<LeadWithVenueDetails> mapToLeadWithVenueDetailsList(Page<LeadRegistration> leads) {
