@@ -315,6 +315,8 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         leadEntity.setAge(leadRegistration.getAge());
         leadEntity.setDob(leadRegistration.getDob());
         leadEntity.setMobileNumber(leadRegistration.getMobileNumber());
+        leadEntity.setIncomeRange(leadRegistration.getIncomeRange());
+        log.debug("leadEntity.incomeRange set to: {}", leadEntity.getIncomeRange());
         leadEntity.setPhoneNumber(leadRegistration.getPhoneNumber());
         leadEntity.setCustomerId(leadRegistration.getCustomerId());
         leadEntity.setEmail(leadRegistration.getEmail());
@@ -410,26 +412,16 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         updateLeadFields(existingLeadEntity, updatedLead,userId);
         updateVenueIfRequired(existingLeadEntity, updatedLead);
         updateOrCreateAddress(existingLeadEntity, updatedLead);
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<LeadDetailsEntity> requestEntity = new HttpEntity<>(existingLeadEntity, headers);
-            ResponseEntity<LeadScoringDTO> response = restTemplate.exchange(
-                    LEAD_SCORE_URL,
-                    HttpMethod.POST,
-                    requestEntity,
-                    LeadScoringDTO.class
-            );
-            if (response.getStatusCode().is2xxSuccessful()) {
-                LeadScoringDTO scoring = response.getBody();
-                if(scoring!=null) {
-                    existingLeadEntity.setScore(scoring.getLeadScore());
-                    existingLeadEntity.setTemperature(scoring.getLeadTemperature());
-                }
-            }
-        } catch (RestClientException ex) {
-            log.error("Failed to fetch lead score: {}", ex.getMessage());
-            // Optional: set default score/temperature or handle fallback
+
+        int score = leadScoringService.calculateLeadScore(existingLeadEntity);
+        existingLeadEntity.setScore(score);
+        existingLeadEntity.setTemperature(leadScoringService.determineTemperature(score));
+        if(score>15 && (existingLeadEntity.getMobileNumber()!= null &&
+                !existingLeadEntity.getMobileNumber().isEmpty()) && (existingLeadEntity.getAge()!= null
+                && existingLeadEntity.getAge() > 18)) {
+            existingLeadEntity.setStage(ENRICHING);
+        } else {
+            existingLeadEntity.setStage(NEWLY_CREATED);
         }
         LeadDetailsEntity savedLead = leadDetailsRepository.save(existingLeadEntity);
         logger.info("Updated lead with ID: {}", savedLead.getId());

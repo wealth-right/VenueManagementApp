@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,8 @@ public class LeadScoringService implements ILeadScoringService {
     private static final String SOURCE_RULES = "source_rules";
     private static final String RECENCY_RULES = "recency_rules";
     private static final String ENGAGEMENT_RULES = "engagement_rules";
+    private static final String GREATER_THAN = "greaterThan";
+    private static final String LESS_THAN = "lessThan";
     private final RuleMasterService ruleMasterService;
 
     private final LeadCrudService leadCrudService;
@@ -50,13 +53,11 @@ public class LeadScoringService implements ILeadScoringService {
         score += calculateDemographicScore(leadDetails.getAge(), leadDetails.getOccupation(), allRules);
         score += calculateScoreBasedOnSource(leadDetails.getSource(), allRules);
         score += calculateScoreBasedOnEngagement(actions, allRules);
-        //    score+=calculateSpecificEngagementScore(
-        //        leadDetails.getDob(),
-        //        leadDetails.getFinancialDetails() != null
-        //            ? leadDetails.getFinancialDetails().getIncomeRange()
-        //            : null,
-        //        actions,
-        //        allRules);
+            score+=calculateSpecificEngagementScore(
+                leadDetails.getAge(),
+                leadDetails.getIncomeRange(),
+                actions,
+                allRules);
 
         score += calculateScoreBasedOnRecency(leadDetails);
 
@@ -166,42 +167,6 @@ public class LeadScoringService implements ILeadScoringService {
         return 0;
     }
 
-
-    private int calculateScoreBasedOnRecency(LeadDetails leadDetails) {
-        Optional<RuleMasterEntity> ruleMaster = ruleMasterService.getRuleByName(RECENCY_RULES);
-        if (ruleMaster.isEmpty()) {
-            log.error("Recency rules not found");
-            return 0;
-        }
-
-        try {
-            RuleMasterEntity rulesEntity = ruleMaster.get();
-            ObjectMapper objectMapper = new ObjectMapper();
-            RecencyRules recencyRules =
-                    objectMapper.readValue(rulesEntity.getRuleValue(), RecencyRules.class);
-            log.debug("Parsed RecencyRules: {}", recencyRules);
-
-            LocalDateTime createdAt = leadDetails.getCreatedAt();
-            long daysSinceCreated = 0;
-            if (createdAt != null) {
-                daysSinceCreated = ChronoUnit.DAYS.between(createdAt.toLocalDate(), LocalDate.now());
-            }
-
-            for (RecencyRules.RecencyRule rule : recencyRules.getRecency()) {
-                RecencyRules.TimePeriod timePeriod = rule.getTimePeriod();
-                if ((timePeriod.getGreaterThan() == null || daysSinceCreated > timePeriod.getGreaterThan())
-                        && (timePeriod.getLessThan() == null || daysSinceCreated < timePeriod.getLessThan())) {
-                    log.debug("Recency {} days matches rule: {}", daysSinceCreated, rule.getType());
-                    return rule.getScore();
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error parsing recency rules: {}", e.getMessage());
-        }
-
-        return 0;
-    }
-
     private int calculateScoreBasedOnEngagement(List<String> actions, List<RuleMaster> allRules) {
         if (actions == null || actions.isEmpty() || allRules == null || allRules.isEmpty()) {
             return 0;
@@ -237,26 +202,21 @@ public class LeadScoringService implements ILeadScoringService {
         return 0; // Default score if no match is found or an error occurs
     }
 
-    private int calculateAgeFromDOB(LocalDate dob) {
-        if (dob == null) return 0;
-        return Period.between(dob, LocalDate.now()).getYears();
-    }
 
     private int calculateSpecificEngagementScore(
-            LocalDate dob, Long income, List<String> actions, List<RuleMaster> allRules) {
-        if ((dob == null && income == null) && (actions == null || actions.isEmpty())
+            int age, String income, List<String> actions, List<RuleMaster> allRules) {
+        if (income == null && (actions == null || actions.isEmpty())
                 || allRules == null
                 || allRules.isEmpty()) {
             return 0;
         }
         Optional<RuleMasterEntity> ruleMasterOpt =
-                ruleMasterService.getRuleByName("specific_engagement_scores");
+                ruleMasterService.getRuleByName("specific_engagement_rules");
         if (ruleMasterOpt.isEmpty()) {
             log.error("Specific engagement rules not found");
             return 0;
         }
         try {
-            int age = calculateAgeFromDOB(dob);
             RuleMasterEntity ruleMaster = ruleMasterOpt.get();
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(ruleMaster.getRuleValue());
@@ -284,15 +244,16 @@ public class LeadScoringService implements ILeadScoringService {
                     boolean incomeOk = true;
 
                     if (ageCriteria != null) {
-                        if (ageCriteria.has("greaterThan")) {
-                            ageOk = age > ageCriteria.get("greaterThan").asInt();
+                        if (ageCriteria.has(GREATER_THAN)) {
+                            ageOk = age > ageCriteria.get(GREATER_THAN).asInt();
                         }
-                        if (ageCriteria.has("lessThan")) {
-                            ageOk = ageOk && age < ageCriteria.get("lessThan").asInt();
+                        if (ageCriteria.has(LESS_THAN)) {
+                            ageOk = ageOk && age < ageCriteria.get(LESS_THAN).asInt();
                         }
                     }
-                    if (incomeCriteria != null && incomeCriteria.has("greaterThan")) {
-                        incomeOk = income > incomeCriteria.get("greaterThan").asLong();
+                    if (incomeCriteria != null && incomeCriteria.has(GREATER_THAN)) {
+                        long parsedIncome = extractIncomeUpperBoundInRupees(income);
+                        incomeOk = parsedIncome > incomeCriteria.get(GREATER_THAN).asLong();
                     }
                     if (ageOk && incomeOk) {
                         int score = rule.get("score_change").asInt();
@@ -307,6 +268,46 @@ public class LeadScoringService implements ILeadScoringService {
         }
         return 0;
     }
+
+    private long extractIncomeUpperBoundInRupees(String incomeRange) {
+        if (incomeRange == null || incomeRange.trim().isEmpty()) return 0;
+
+        try {
+            incomeRange = incomeRange.trim().toLowerCase();
+            double value = 0;
+            if (incomeRange.startsWith("up to")) {
+                // e.g. "Up to 2.5 Lakhs"
+                String[] parts = incomeRange.split("up to");
+                if (parts.length == 2) {
+                    value = parseLakhs(parts[1].trim());
+                }
+            } else if (incomeRange.contains("to")) {
+                // e.g. "2.5 Lakhs to 5.0 Lakhs"
+                String[] parts = incomeRange.split("to");
+                if (parts.length == 2) {
+                    value = parseLakhs(parts[1].trim());
+                }
+            } else if (incomeRange.startsWith("above")) {
+                // e.g. "Above 50 Lakhs"
+                String[] parts = incomeRange.split("above");
+                if (parts.length == 2) {
+                    value = parseLakhs(parts[1].trim());
+                }
+            }
+            return (long) value;
+        } catch (Exception e) {
+            log.error("Error parsing income range '{}': {}", incomeRange, e.getMessage());
+            return 0;
+        }
+    }
+
+    private double parseLakhs(String amount) {
+        String[] parts = amount.split(" ");
+        double number = Double.parseDouble(parts[0].trim());
+        return number * 100000;
+    }
+
+
 
     private int calculateScoreBasedOnSource(String source, List<RuleMaster> rules) {
         if (source == null || rules == null || rules.isEmpty()) {

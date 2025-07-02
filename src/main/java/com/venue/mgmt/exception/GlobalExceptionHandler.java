@@ -4,6 +4,7 @@ import com.venue.mgmt.constant.ErrorMsgConstants;
 import org.apache.coyote.BadRequestException;
 import org.json.JSONObject;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -89,6 +90,13 @@ public class GlobalExceptionHandler {
             }
         }
         return buildErrorResponse(status, "Internal Server Error", message);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String errorMsg = "Data integrity violation: " + ex.getMostSpecificCause().getMessage();
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", errorMsg);
     }
 
 
