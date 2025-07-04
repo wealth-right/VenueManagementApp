@@ -16,6 +16,7 @@ import com.venue.mgmt.request.UserMasterRequest;
 import com.venue.mgmt.services.LeadRegistrationService;
 import com.venue.mgmt.services.UserMgmtResService;
 import com.venue.mgmt.services.impl.utils.OccupationCodesUtil;
+import com.venue.mgmt.util.CommonUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -537,6 +538,19 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         customerRequest.setBranchCode(userMasterDetails.getBranchCode());
         CustomerServiceClient customerServiceClient = new CustomerServiceClient(new RestTemplate());
         ResponseEntity<String> entity = customerServiceClient.saveCustomerData(customerRequest,authHeader);
+        String customerDetails=entity.getBody();
+        if (customerDetails == null || customerDetails.isEmpty()) {
+            logger.error("Failed to persist customer details for lead: {}", leadRegistration.getLeadId());
+            return null;
+        }
+        String customerId=CommonUtils.extractCustomerId(customerDetails);
+        customerServiceClient.addCustomerAddress(
+                customerId,
+                true, // Assuming communication address is same as permanent
+                addressMapping(leadRegistration),
+                userId,
+                authHeader
+        );
         return entity.getBody();
     }
 
