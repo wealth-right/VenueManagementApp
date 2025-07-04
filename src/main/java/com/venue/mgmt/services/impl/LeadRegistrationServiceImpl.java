@@ -1,7 +1,5 @@
 package com.venue.mgmt.services.impl;
 
-import com.venue.mgmt.dto.LeadScoringDTO;
-import com.venue.mgmt.dto.LeadDetails;
 import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.AddressDetailsEntity;
 import com.venue.mgmt.entities.LeadDetailsEntity;
@@ -27,15 +25,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 
@@ -47,12 +46,13 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
 
     private static final String COUNTRY="India";
 
-    private static final String SOURCE = "QuickTapApp";
+    private static final String SOURCE = "QuickTap";
 
     private static final String TYPE = "Prospect";
     private static final String NEW_STAGE = "NEW";
     private static final String LEAD_NOT_FOUND = "Lead not found with id: ";
-    private static final String LEAD_SCORE_URL = "https://sit-services.wealth-right.com/api/lmsapi/api/v1/public/lead-score";
+    private static final String ENRICHING = "ENRICHING";
+    private static final String NEWLY_CREATED = "NEW";
 
     private final LeadRegRepository leadRegRepository;
 
@@ -63,22 +63,23 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final UserMgmtResService userMgmtResService;
 
     private final AddressDetailsRepository addressDetailsRepository;
-    private final RestTemplate restTemplate;
 
+    private final LeadScoringService leadScoringService;
 
 
     private final HttpServletRequest request;
 
     public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService,
                                        HttpServletRequest request, LeadDetailsRepository leadDetailsRepository,
-                                       AddressDetailsRepository  addressDetailsRepository,RestTemplate restTemplate) {
+                                       AddressDetailsRepository  addressDetailsRepository,
+                                       LeadScoringService leadScoringService) {
         this.leadRegRepository = leadRegRepository;
         this.venueRepository = venueRepository;
         this.userMgmtResService = userMgmtResService;
         this.request = request;
         this.leadDetailsRepository = leadDetailsRepository;
         this.addressDetailsRepository = addressDetailsRepository;
-        this.restTemplate = restTemplate;
+        this.leadScoringService = leadScoringService;
     }
 
     @Override
@@ -103,6 +104,17 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         address.setLeadDetailsEntity(leadEntity); // bidirectional link
         leadEntity.setAddressDetailsEntity(address);
         logger.info("Saving lead registration...");
+        int score = leadScoringService.calculateLeadScore(leadEntity);
+        leadEntity.setScore(score);
+        leadEntity.setTemperature(leadScoringService.determineTemperature(score));
+        if(score>15 && (leadEntity.getMobileNumber()!= null &&
+                !leadEntity.getMobileNumber().isEmpty()) && (leadEntity.getAge()!= null
+                && leadEntity.getAge() > 18)) {
+            leadEntity.setStage(ENRICHING);
+        } else {
+            leadEntity.setStage(NEWLY_CREATED);
+
+        }
         LeadDetailsEntity save = leadDetailsRepository.save(leadEntity);
         return convertToLeadRegistration(save, venue);
     }
@@ -298,6 +310,8 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         leadEntity.setAge(leadRegistration.getAge());
         leadEntity.setDob(leadRegistration.getDob());
         leadEntity.setMobileNumber(leadRegistration.getMobileNumber());
+        leadEntity.setIncomeRange(leadRegistration.getIncomeRange());
+        log.debug("leadEntity.incomeRange set to: {}", leadEntity.getIncomeRange());
         leadEntity.setPhoneNumber(leadRegistration.getPhoneNumber());
         leadEntity.setCustomerId(leadRegistration.getCustomerId());
         leadEntity.setEmail(leadRegistration.getEmail());
@@ -393,26 +407,16 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         updateLeadFields(existingLeadEntity, updatedLead,userId);
         updateVenueIfRequired(existingLeadEntity, updatedLead);
         updateOrCreateAddress(existingLeadEntity, updatedLead);
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<LeadDetailsEntity> requestEntity = new HttpEntity<>(existingLeadEntity, headers);
-            ResponseEntity<LeadScoringDTO> response = restTemplate.exchange(
-                    LEAD_SCORE_URL,
-                    HttpMethod.POST,
-                    requestEntity,
-                    LeadScoringDTO.class
-            );
-            if (response.getStatusCode().is2xxSuccessful()) {
-                LeadScoringDTO scoring = response.getBody();
-                if(scoring!=null) {
-                    existingLeadEntity.setScore(scoring.getLeadScore());
-                    existingLeadEntity.setTemperature(scoring.getLeadTemperature());
-                }
-            }
-        } catch (RestClientException ex) {
-            log.error("Failed to fetch lead score: {}", ex.getMessage());
-            // Optional: set default score/temperature or handle fallback
+
+        int score = leadScoringService.calculateLeadScore(existingLeadEntity);
+        existingLeadEntity.setScore(score);
+        existingLeadEntity.setTemperature(leadScoringService.determineTemperature(score));
+        if(score>15 && (existingLeadEntity.getMobileNumber()!= null &&
+                !existingLeadEntity.getMobileNumber().isEmpty()) && (existingLeadEntity.getAge()!= null
+                && existingLeadEntity.getAge() > 18)) {
+            existingLeadEntity.setStage(ENRICHING);
+        } else {
+            existingLeadEntity.setStage(NEWLY_CREATED);
         }
         LeadDetailsEntity savedLead = leadDetailsRepository.save(existingLeadEntity);
         logger.info("Updated lead with ID: {}", savedLead.getId());
