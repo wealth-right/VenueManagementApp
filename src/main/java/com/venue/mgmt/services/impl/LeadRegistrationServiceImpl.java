@@ -1,7 +1,5 @@
 package com.venue.mgmt.services.impl;
 
-import com.venue.mgmt.dto.LeadScoringDTO;
-import com.venue.mgmt.dto.LeadDetails;
 import com.venue.mgmt.dto.LeadWithVenueDetails;
 import com.venue.mgmt.entities.AddressDetailsEntity;
 import com.venue.mgmt.entities.LeadDetailsEntity;
@@ -27,15 +25,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 import static com.venue.mgmt.constant.GeneralMsgConstants.USER_ID;
 
@@ -52,7 +51,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private static final String TYPE = "Prospect";
     private static final String NEW_STAGE = "NEW";
     private static final String LEAD_NOT_FOUND = "Lead not found with id: ";
-    private static final String LEAD_SCORE_URL = "https://sit-services.wealth-right.com/api/lmsapi/api/v1/public/lead-score";
     private static final String ENRICHING = "ENRICHING";
     private static final String NEWLY_CREATED = "NEW";
 
@@ -65,17 +63,15 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
     private final UserMgmtResService userMgmtResService;
 
     private final AddressDetailsRepository addressDetailsRepository;
-    private final RestTemplate restTemplate;
 
     private final LeadScoringService leadScoringService;
-
 
 
     private final HttpServletRequest request;
 
     public LeadRegistrationServiceImpl(LeadRegRepository leadRegRepository, VenueRepository venueRepository, UserMgmtResService userMgmtResService,
                                        HttpServletRequest request, LeadDetailsRepository leadDetailsRepository,
-                                       AddressDetailsRepository  addressDetailsRepository,RestTemplate restTemplate,
+                                       AddressDetailsRepository  addressDetailsRepository,
                                        LeadScoringService leadScoringService) {
         this.leadRegRepository = leadRegRepository;
         this.venueRepository = venueRepository;
@@ -83,7 +79,6 @@ public class LeadRegistrationServiceImpl implements LeadRegistrationService {
         this.request = request;
         this.leadDetailsRepository = leadDetailsRepository;
         this.addressDetailsRepository = addressDetailsRepository;
-        this.restTemplate = restTemplate;
         this.leadScoringService = leadScoringService;
     }
 

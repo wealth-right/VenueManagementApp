@@ -8,14 +8,13 @@ spring:
   application:
     name: Venue Management App
   datasource:
-    url: jdbc:postgresql://34.47.157.92:5432/summitpg?currentSchema=leadmgmt
+    url: jdbc:postgresql://34.47.157.92:5432/summitpg
     username: NvestSQL
     password: "]A<at$NI9$j.|%z%"
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: none
-      default_schema: leadmgmt
     properties:
       hibernate:
         format_sql: true

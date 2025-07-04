@@ -52,7 +52,7 @@ public class VenueManagementAppApplication {
         registrationBean.addUrlPatterns("/venue-app/v1/*"); // Adjust the URL patterns as needed
         registrationBean.addInitParameter("excludedUrls",
                 "/api/venue/venue-app/v1/auth/sendOtp,/api/venue/venue-app/v1/auth/verify-otp," +
-                        "/api/venue/config");
+                        "/api/venue/venue-app/v1/config");
         return registrationBean;
     }
 }
